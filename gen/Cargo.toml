@@ -1,0 +1,19 @@
+[package]
+authors = [
+    "Alexander Gunger <alexandergunger666@gmail.com>",
+    "Wings Studio"
+]
+description = "Generates entrypoint for your library to further Tangara loading"
+keywords = ["code-generation", "tangara"]
+name = "tangara-gen"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/wings-studio/Tangara"
+
+[dependencies]
+tangara = { version = "0.1.0", path = "../" }
+quote = "1.0"
+proc-macro2 = "1.0"
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+xxhash-rust = { version = "0.8.7", features = ["xxh3", "const_xxh3"] }

@@ -1,7 +1,18 @@
 [package]
+authors = [
+    "Alexander Gunger <alexandergunger666@gmail.com>",
+    "Wings Studio"
+]
+description = "Library for helping with interop between languages"
+keywords = ["ffi", "tangara"]
 name = "tangara"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+repository = "https://github.com/wings-studio/Tangara"
+
+[workspace]
+members = ["gen"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

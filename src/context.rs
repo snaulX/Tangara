@@ -7,7 +7,7 @@ pub type Fn = extern "C" fn(usize, *mut u8) -> Ptr;
 pub struct FuncTable {
     dtor: Option<FnDtor>,
     ctors: Vec<Fn>,
-    methods: HashMap<u32, Fn>
+    methods: HashMap<u64, Fn>
 }
 
 impl FuncTable {
@@ -36,11 +36,11 @@ impl FuncTable {
         self.ctors.get(index).expect(format!("Ctor not found at {index} index").as_str())
     }
 
-    pub fn add_method(&mut self, id: u32, func: Fn) {
+    pub fn add_method(&mut self, id: u64, func: Fn) {
         self.methods.insert(id, func);
     }
 
-    pub fn get_method(&self, id: u32) -> &Fn {
+    pub fn get_method(&self, id: u64) -> &Fn {
         self.methods.get(&id).expect(format!("Method with id {id} is not found").as_str())
     }
 
@@ -79,7 +79,7 @@ impl TypeTable {
 }
 
 pub struct Context {
-    pkgs: HashMap<u32, TypeTable>
+    pkgs: HashMap<u64, TypeTable>
 }
 
 impl Context {
@@ -89,12 +89,12 @@ impl Context {
         }
     }
 
-    pub fn add_package(&mut self, id: u32) -> &mut TypeTable {
+    pub fn add_package(&mut self, id: u64) -> &mut TypeTable {
         self.pkgs.insert(id, TypeTable::new());
         self.pkgs.get_mut(&id).unwrap()
     }
 
-    pub fn get_package(&self, id: u32) -> &TypeTable {
+    pub fn get_package(&self, id: u64) -> &TypeTable {
         self.pkgs.get(&id).expect(format!("Package by id {id} not found").as_str())
     }
 }
