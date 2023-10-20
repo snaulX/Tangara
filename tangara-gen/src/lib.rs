@@ -215,9 +215,18 @@ impl Generator {
         }
 
         // Parse return type
+        let call_func = if use_this {
+            quote!((*this).#fn_name_ident(#args_tokens))
+        }
+        else {
+            quote!(#struct_name::#fn_name_ident(#args_tokens))
+        };
         match &fn_sig.output {
             ReturnType::Default => {
-                fn_body.extend(quote!(ptr::null_mut()));
+                fn_body.extend(quote! {
+                    #call_func;
+                    ptr::null_mut()
+                });
             }
             ReturnType::Type(_, return_type_boxed) => {
                 let return_type = return_type_boxed.deref();
@@ -225,19 +234,16 @@ impl Generator {
                 if let Type::Tuple(tuple_type) = return_type {
                     // function returns () - nothing
                     if tuple_type.elems.len() == 0 {
-                        fn_body.extend(quote!(ptr::null_mut()));
+                        fn_body.extend(quote! {
+                            #call_func;
+                            ptr::null_mut()
+                        });
                         was_returned = true;
                     }
                 }
                 if !was_returned {
-                    let to_return = if use_this {
-                        quote!((*this).#fn_name_ident(#args_tokens))
-                    }
-                    else {
-                        quote!(#struct_name::#fn_name_ident(#args_tokens))
-                    };
                     fn_body.extend(quote! {
-                        let to_return = Box::new(#to_return);
+                        let to_return = Box::new(#call_func);
                         Box::into_raw(to_return) as Ptr
                     });
                 }
@@ -342,7 +348,7 @@ impl Generator {
 
     /// Generates bindings for pub(crate) functions
     /// By default: `false`
-    pub fn generate_internal(mut self, generate_internal: bool) -> Self {
+    pub fn enable_internal(mut self, generate_internal: bool) -> Self {
         self.generate_internal = generate_internal;
         self
     }

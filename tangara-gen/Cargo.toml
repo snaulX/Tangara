@@ -12,8 +12,10 @@ readme = "README.md"
 repository = "https://github.com/wings-studio/Tangara"
 
 [dependencies]
-tangara = { version = "0.1.0", path = "../" }
 quote = "1.0"
 proc-macro2 = "1.0"
 syn = { version = "2.0", features = ["full", "extra-traits"] }
 xxhash-rust = { version = "0.8.7", features = ["xxh3", "const_xxh3"] }
+
+[dev-dependencies]
+tangara = { version = "0.1.0", path = "../tangara" }
