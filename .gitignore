@@ -14,7 +14,3 @@ target/
 *.pdb
 
 .idea/discord.xml
-
-# Outputs of generator tests
-/tangara-gen/tests/result.rs
-/tangara-gen/tests/tangara.rs

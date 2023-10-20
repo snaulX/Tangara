@@ -1,3 +1,5 @@
+mod bindings;
+
 struct MyStruct {
     name: String
 }

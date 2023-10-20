@@ -13,3 +13,13 @@ repository = "https://github.com/wings-studio/Tangara"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+quote = { version = "1.0", optional = true }
+proc-macro2 = { version = "1.0", optional = true }
+syn = { version = "2.0", optional = true, features = ["full", "extra-traits"] }
+xxhash-rust = { version = "0.8.7", optional = true, features = ["xxh3", "const_xxh3"] }
+
+[features]
+default = []
+gen = ["dep:quote", "dep:proc-macro2", "dep:syn", "dep:xxhash-rust"]

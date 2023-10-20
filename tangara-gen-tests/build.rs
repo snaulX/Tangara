@@ -1,11 +1,11 @@
-use tangara_gen::Generator;
+use tangara::gen::Generator;
 
-#[test]
-fn gentest() {
+fn main() {
     Generator::new("MyPackage")
         .enable_internal(true)
-        .parse_file("tests/mymod.rs")
-        .generate_to_file("tests/result.rs")
+        .parse_file("src/lib.rs")
+        .custom_uses(vec!["crate::*"])
+        .generate_to_file("src/bindings.rs")
         .unwrap();
 
     Generator::new("Tangara")
@@ -13,9 +13,9 @@ fn gentest() {
         .parse_file("../tangara/src/context.rs")
         .parse_file("../tangara/src/runtime.rs")
         .custom_uses(vec![
-            "tangara::context::*",
-            "tangara::runtime::*",
+            "crate::context::*",
+            "crate::runtime::*",
         ])
-        .generate_to_file("tests/tangara.rs")
+        .generate_to_file("../tangara/src/bindings.rs")
         .unwrap();
 }

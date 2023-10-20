@@ -44,7 +44,7 @@ impl FuncTable {
         self.methods.get(&id).expect(format!("Method with id {id} is not found").as_str())
     }
 
-    /*pub*/ fn finalize(mut self) -> Result<Self, String> {
+    /*pub fn finalize(mut self) -> Result<Self, String> {
         if self.ctors.len() == 0 {
             Err("There is no one constructor".to_string())
         }
@@ -54,7 +54,7 @@ impl FuncTable {
         else {
             Ok(self)
         }
-    }
+    }*/
 }
 
 pub struct TypeTable {
