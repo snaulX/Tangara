@@ -4,10 +4,16 @@ pub type Ptr = *mut u8;
 pub type FnDtor = extern "C" fn(Ptr);
 pub type Fn = extern "C" fn(usize, *mut u8) -> Ptr;
 
+pub struct Property {
+    pub getter: extern "C" fn(Ptr) -> Ptr,
+    pub setter: Option<extern "C" fn(Ptr, Ptr)>
+}
+
 pub struct FuncTable {
     dtor: Option<FnDtor>,
     ctors: Vec<Fn>,
-    methods: HashMap<u64, Fn>
+    methods: HashMap<u64, Fn>,
+    properties: HashMap<u64, Property>
 }
 
 impl FuncTable {
@@ -15,7 +21,8 @@ impl FuncTable {
         Self {
             dtor: None,
             ctors: Vec::new(),
-            methods: HashMap::new()
+            methods: HashMap::new(),
+            properties: HashMap::new()
         }
     }
 
@@ -33,7 +40,7 @@ impl FuncTable {
     }
 
     pub fn get_ctor(&self, index: usize) -> &Fn {
-        self.ctors.get(index).expect(format!("Ctor not found at {index} index").as_str())
+        self.ctors.get(index).expect(format!("Constructor not found at {index} index").as_str())
     }
 
     pub fn add_method(&mut self, id: u64, func: Fn) {
@@ -44,17 +51,13 @@ impl FuncTable {
         self.methods.get(&id).expect(format!("Method with id {id} is not found").as_str())
     }
 
-    /*pub fn finalize(mut self) -> Result<Self, String> {
-        if self.ctors.len() == 0 {
-            Err("There is no one constructor".to_string())
-        }
-        else if self.dtor == None {
-            Err("Destructor is not set".to_string())
-        }
-        else {
-            Ok(self)
-        }
-    }*/
+    pub fn add_property(&mut self, id: u64, property: Property) {
+        self.properties.insert(id, property);
+    }
+
+    pub fn get_property(&self, id: u64) -> &Property {
+        self.properties.get(&id).expect(format!("Property with id {id} is not found").as_str())
+    }
 }
 
 pub struct TypeTable {

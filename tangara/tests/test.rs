@@ -1,6 +1,6 @@
 use std::alloc::{dealloc, Layout};
 use std::ptr;
-use tangara::context::Ptr;
+use tangara::context::{Property, Ptr};
 use tangara::runtime::Runtime;
 
 struct MyStruct {
@@ -45,28 +45,25 @@ extern "C" fn MyStruct_repeat_name(args_size: usize, args: *mut u8) -> *mut u8 {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
         let this: *mut MyStruct = *(args_slice.as_mut_ptr() as *mut Ptr) as *mut MyStruct;
-        let times: u32 = *(args_slice.as_mut_ptr().add(std::mem::size_of::<*mut MyStruct>()) as *mut u32);
+        let times: u32 = ptr::read(args_slice.as_mut_ptr().add(std::mem::size_of::<*mut MyStruct>()) as *mut u32);
         (*this).repeat_name(times);
     }
     ptr::null_mut()
 }
 
-extern "C" fn MyStruct_set_name(args_size: usize, args: *mut u8) -> *mut u8 {
+extern "C" fn MyStruct_set_name(this: Ptr, object: Ptr) {
     unsafe {
-        let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let this: *mut MyStruct = *(args_slice.as_mut_ptr() as *mut Ptr) as *mut MyStruct;
-        let name: &str = *(args_slice.as_mut_ptr().add(std::mem::size_of::<*mut MyStruct>()) as *mut &str);
+        let this: *mut MyStruct = this as *mut MyStruct;
+        let name: &str = ptr::read(object as *const &str);
         (*this).set_name(name);
     }
-    ptr::null_mut()
 }
 
-extern "C" fn MyStruct_get_name(args_size: usize, args: *mut u8) -> *mut u8 {
+extern "C" fn MyStruct_get_name(this: Ptr) -> Ptr {
     unsafe {
-        let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let this: *mut MyStruct = *(args_slice.as_mut_ptr() as *mut Ptr) as *mut MyStruct;
+        let this: *const MyStruct = this as *const MyStruct;
         let to_return = Box::new((*this).get_name());
-        Box::into_raw(to_return) as *mut u8
+        Box::into_raw(to_return) as Ptr
     }
 }
 
@@ -81,8 +78,10 @@ fn it_works() {
         MyStruct_type.add_ctor(MyStruct_ctor0);
         MyStruct_type.set_dtor(MyStruct_dtor);
         MyStruct_type.add_method(0, MyStruct_repeat_name);
-        MyStruct_type.add_method(1, MyStruct_set_name);
-        MyStruct_type.add_method(2, MyStruct_get_name);
+        MyStruct_type.add_property(1, Property {
+            getter: MyStruct_get_name,
+            setter: Some(MyStruct_set_name)
+        });
     }
     {
         // Access what we need
@@ -91,12 +90,35 @@ fn it_works() {
         let ctor = MyStruct_type.get_ctor(0);
         let dtor = MyStruct_type.get_dtor();
         let repeat_name = MyStruct_type.get_method(0);
-        let set_name = MyStruct_type.get_method(1);
-        let get_name = MyStruct_type.get_method(2);
+        let name_property = MyStruct_type.get_property(1);
 
         // Create object
         let object = ctor(0, ptr::null_mut());
 
+        // println!("I found the name {}", object.get_name());
+        {
+            let raw_ptr = (name_property.getter)(object);
+            let name: &str = if !raw_ptr.is_null() {
+                *unsafe {
+                    Box::from_raw(raw_ptr as *mut &str)
+                }
+            } else {
+                panic!("Pointer on name is null");
+            };
+            println!("I found the name {}", name);
+        }
+
+        // object.set_name("Alexander");
+        {
+            let name = "Alexander";
+            // TODO: rewrite using ptr::read/write
+            let name_boxed = Box::new(name);
+            if let Some(set_name) = name_property.setter {
+                set_name(object, Box::into_raw(name_boxed) as Ptr);
+            }
+        }
+
+        /*
         // println!("I found the name {}", object.get_name());
         {
             let args_size = std::mem::size_of::<Ptr>();
@@ -130,6 +152,7 @@ fn it_works() {
             }
             set_name(args_size, args_ptr);
         }
+         */
 
         // object.repeat_name(5);
         {

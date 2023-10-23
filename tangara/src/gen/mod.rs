@@ -98,9 +98,9 @@ impl Generator {
                     quote!(*mut #arg_type)
                 };
                 fn_body.extend(quote! {
-                                let #arg_ident: #arg_type = *(args_ptr.add(prev_arg_size) as #arg_type_ptr);
-                                prev_arg_size = std::mem::size_of::<#arg_type>();
-                            });
+                    let #arg_ident: #arg_type = ptr::read(args_ptr as #arg_type_ptr);
+                    args_ptr = args_ptr.add(std::mem::size_of::<#arg_type>());
+                });
                 arg_ident.clone().ident
             }
             _ => unimplemented!("Strange pattern of argument")
@@ -117,8 +117,7 @@ impl Generator {
         let mut ctor_body = if fn_sig.inputs.len() > 0 {
             quote! {
                 let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-                let args_ptr = args_slice.as_mut_ptr();
-                let mut prev_arg_size = 0usize;
+                let mut args_ptr = args_slice.as_mut_ptr();
             }
         } else {
             TokenStream::new()
@@ -181,8 +180,7 @@ impl Generator {
         let mut fn_body = if fn_sig.inputs.len() > 0 {
             quote! {
                 let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-                let args_ptr = args_slice.as_mut_ptr();
-                let mut prev_arg_size = 0usize;
+                let mut args_ptr = args_slice.as_mut_ptr();
             }
         } else {
             TokenStream::new()
@@ -203,7 +201,7 @@ impl Generator {
                     // TODO: add support for self: T types from https://doc.rust-lang.org/stable/reference/items/associated-items.html#methods
                     fn_body.extend(quote! {
                         let this: #this_type = *(args_ptr as *mut Ptr) as #this_type;
-                        prev_arg_size = std::mem::size_of::<#this_type>();
+                        args_ptr = args_ptr.add(std::mem::size_of::<#this_type>());
                     });
                 }
                 FnArg::Typed(arg) => {
@@ -325,7 +323,7 @@ impl Generator {
                     }
                 }
                 _ => {
-                    println!("why I need this");
+                    //println!("why I need this");
                 }
             }
         }

@@ -15,12 +15,11 @@ extern "C" fn FuncTable_dtor(object: Ptr) {
 extern "C" fn FuncTable_set_dtor(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *mut FuncTable = *(args_ptr as *mut Ptr) as *mut FuncTable;
-        prev_arg_size = std::mem::size_of::<*mut FuncTable>();
-        let dtor: FnDtor = *(args_ptr.add(prev_arg_size) as *const FnDtor);
-        prev_arg_size = std::mem::size_of::<FnDtor>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut FuncTable>());
+        let dtor: FnDtor = ptr::read(args_ptr as *const FnDtor);
+        args_ptr = args_ptr.add(std::mem::size_of::<FnDtor>());
         (*this).set_dtor(dtor);
         ptr::null_mut()
     }
@@ -29,10 +28,9 @@ extern "C" fn FuncTable_set_dtor(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn FuncTable_get_dtor(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *const FuncTable = *(args_ptr as *mut Ptr) as *const FuncTable;
-        prev_arg_size = std::mem::size_of::<*const FuncTable>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*const FuncTable>());
         let to_return = Box::new((*this).get_dtor());
         Box::into_raw(to_return) as Ptr
     }
@@ -41,12 +39,11 @@ extern "C" fn FuncTable_get_dtor(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn FuncTable_add_ctor(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *mut FuncTable = *(args_ptr as *mut Ptr) as *mut FuncTable;
-        prev_arg_size = std::mem::size_of::<*mut FuncTable>();
-        let ctor: Fn = *(args_ptr.add(prev_arg_size) as *const Fn);
-        prev_arg_size = std::mem::size_of::<Fn>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut FuncTable>());
+        let ctor: Fn = ptr::read(args_ptr as *const Fn);
+        args_ptr = args_ptr.add(std::mem::size_of::<Fn>());
         let to_return = Box::new((*this).add_ctor(ctor));
         Box::into_raw(to_return) as Ptr
     }
@@ -55,12 +52,11 @@ extern "C" fn FuncTable_add_ctor(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn FuncTable_get_ctor(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *const FuncTable = *(args_ptr as *mut Ptr) as *const FuncTable;
-        prev_arg_size = std::mem::size_of::<*const FuncTable>();
-        let index: usize = *(args_ptr.add(prev_arg_size) as *const usize);
-        prev_arg_size = std::mem::size_of::<usize>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*const FuncTable>());
+        let index: usize = ptr::read(args_ptr as *const usize);
+        args_ptr = args_ptr.add(std::mem::size_of::<usize>());
         let to_return = Box::new((*this).get_ctor(index));
         Box::into_raw(to_return) as Ptr
     }
@@ -69,14 +65,13 @@ extern "C" fn FuncTable_get_ctor(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn FuncTable_add_method(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *mut FuncTable = *(args_ptr as *mut Ptr) as *mut FuncTable;
-        prev_arg_size = std::mem::size_of::<*mut FuncTable>();
-        let id: u64 = *(args_ptr.add(prev_arg_size) as *const u64);
-        prev_arg_size = std::mem::size_of::<u64>();
-        let func: Fn = *(args_ptr.add(prev_arg_size) as *const Fn);
-        prev_arg_size = std::mem::size_of::<Fn>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut FuncTable>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
+        let func: Fn = ptr::read(args_ptr as *const Fn);
+        args_ptr = args_ptr.add(std::mem::size_of::<Fn>());
         (*this).add_method(id, func);
         ptr::null_mut()
     }
@@ -85,13 +80,40 @@ extern "C" fn FuncTable_add_method(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn FuncTable_get_method(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *const FuncTable = *(args_ptr as *mut Ptr) as *const FuncTable;
-        prev_arg_size = std::mem::size_of::<*const FuncTable>();
-        let id: u64 = *(args_ptr.add(prev_arg_size) as *const u64);
-        prev_arg_size = std::mem::size_of::<u64>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*const FuncTable>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
         let to_return = Box::new((*this).get_method(id));
+        Box::into_raw(to_return) as Ptr
+    }
+}
+
+extern "C" fn FuncTable_add_property(args_size: usize, args: *mut u8) -> Ptr {
+    unsafe {
+        let args_slice = std::slice::from_raw_parts_mut(args, args_size);
+        let mut args_ptr = args_slice.as_mut_ptr();
+        let this: *mut FuncTable = *(args_ptr as *mut Ptr) as *mut FuncTable;
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut FuncTable>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
+        let property: Property = ptr::read(args_ptr as *const Property);
+        args_ptr = args_ptr.add(std::mem::size_of::<Property>());
+        (*this).add_property(id, property);
+        ptr::null_mut()
+    }
+}
+
+extern "C" fn FuncTable_get_property(args_size: usize, args: *mut u8) -> Ptr {
+    unsafe {
+        let args_slice = std::slice::from_raw_parts_mut(args, args_size);
+        let mut args_ptr = args_slice.as_mut_ptr();
+        let this: *const FuncTable = *(args_ptr as *mut Ptr) as *const FuncTable;
+        args_ptr = args_ptr.add(std::mem::size_of::<*const FuncTable>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
+        let to_return = Box::new((*this).get_property(id));
         Box::into_raw(to_return) as Ptr
     }
 }
@@ -106,12 +128,11 @@ extern "C" fn TypeTable_dtor(object: Ptr) {
 extern "C" fn TypeTable_add_type(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *mut TypeTable = *(args_ptr as *mut Ptr) as *mut TypeTable;
-        prev_arg_size = std::mem::size_of::<*mut TypeTable>();
-        let id: u64 = *(args_ptr.add(prev_arg_size) as *const u64);
-        prev_arg_size = std::mem::size_of::<u64>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut TypeTable>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
         let to_return = Box::new((*this).add_type(id));
         Box::into_raw(to_return) as Ptr
     }
@@ -120,12 +141,11 @@ extern "C" fn TypeTable_add_type(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn TypeTable_get_type(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *const TypeTable = *(args_ptr as *mut Ptr) as *const TypeTable;
-        prev_arg_size = std::mem::size_of::<*const TypeTable>();
-        let id: u64 = *(args_ptr.add(prev_arg_size) as *const u64);
-        prev_arg_size = std::mem::size_of::<u64>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*const TypeTable>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
         let to_return = Box::new((*this).get_type(id));
         Box::into_raw(to_return) as Ptr
     }
@@ -141,12 +161,11 @@ extern "C" fn Context_dtor(object: Ptr) {
 extern "C" fn Context_add_package(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *mut Context = *(args_ptr as *mut Ptr) as *mut Context;
-        prev_arg_size = std::mem::size_of::<*mut Context>();
-        let id: u64 = *(args_ptr.add(prev_arg_size) as *const u64);
-        prev_arg_size = std::mem::size_of::<u64>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut Context>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
         let to_return = Box::new((*this).add_package(id));
         Box::into_raw(to_return) as Ptr
     }
@@ -155,12 +174,11 @@ extern "C" fn Context_add_package(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn Context_get_package(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *const Context = *(args_ptr as *mut Ptr) as *const Context;
-        prev_arg_size = std::mem::size_of::<*const Context>();
-        let id: u64 = *(args_ptr.add(prev_arg_size) as *const u64);
-        prev_arg_size = std::mem::size_of::<u64>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*const Context>());
+        let id: u64 = ptr::read(args_ptr as *const u64);
+        args_ptr = args_ptr.add(std::mem::size_of::<u64>());
         let to_return = Box::new((*this).get_package(id));
         Box::into_raw(to_return) as Ptr
     }
@@ -183,10 +201,9 @@ extern "C" fn Runtime_ctor0(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn Runtime_use_context(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *mut Runtime = *(args_ptr as *mut Ptr) as *mut Runtime;
-        prev_arg_size = std::mem::size_of::<*mut Runtime>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut Runtime>());
         let to_return = Box::new((*this).use_context());
         Box::into_raw(to_return) as Ptr
     }
@@ -203,6 +220,8 @@ pub extern "C" fn tgLoad(ctx: &mut Context) {
     FuncTable_type.add_method(13716004744215497315u64, FuncTable_get_ctor);
     FuncTable_type.add_method(2613526156381584129u64, FuncTable_add_method);
     FuncTable_type.add_method(5591810151844744367u64, FuncTable_get_method);
+    FuncTable_type.add_method(13460265176290382630u64, FuncTable_add_property);
+    FuncTable_type.add_method(6787504510282495024u64, FuncTable_get_property);
     let mut TypeTable_type = Tangara_package.add_type(4384400752349026774u64);
     TypeTable_type.set_dtor(TypeTable_dtor);
     TypeTable_type.add_method(6015440599223952010u64, TypeTable_add_type);

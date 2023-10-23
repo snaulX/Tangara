@@ -22,12 +22,11 @@ extern "C" fn MyStruct_ctor0(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn MyStruct_repeat_name(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *const MyStruct = *(args_ptr as *mut Ptr) as *const MyStruct;
-        prev_arg_size = std::mem::size_of::<*const MyStruct>();
-        let times: u32 = *(args_ptr.add(prev_arg_size) as *const u32);
-        prev_arg_size = std::mem::size_of::<u32>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*const MyStruct>());
+        let times: u32 = ptr::read(args_ptr as *const u32);
+        args_ptr = args_ptr.add(std::mem::size_of::<u32>());
         (*this).repeat_name(times);
         ptr::null_mut()
     }
@@ -36,12 +35,11 @@ extern "C" fn MyStruct_repeat_name(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn MyStruct_set_name(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *mut MyStruct = *(args_ptr as *mut Ptr) as *mut MyStruct;
-        prev_arg_size = std::mem::size_of::<*mut MyStruct>();
-        let name: &str = *(args_ptr.add(prev_arg_size) as *const &str);
-        prev_arg_size = std::mem::size_of::<&str>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*mut MyStruct>());
+        let name: &str = ptr::read(args_ptr as *const &str);
+        args_ptr = args_ptr.add(std::mem::size_of::<&str>());
         (*this).set_name(name);
         ptr::null_mut()
     }
@@ -50,10 +48,9 @@ extern "C" fn MyStruct_set_name(args_size: usize, args: *mut u8) -> Ptr {
 extern "C" fn MyStruct_get_name(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
-        let args_ptr = args_slice.as_mut_ptr();
-        let mut prev_arg_size = 0usize;
+        let mut args_ptr = args_slice.as_mut_ptr();
         let this: *const MyStruct = *(args_ptr as *mut Ptr) as *const MyStruct;
-        prev_arg_size = std::mem::size_of::<*const MyStruct>();
+        args_ptr = args_ptr.add(std::mem::size_of::<*const MyStruct>());
         let to_return = Box::new((*this).get_name());
         Box::into_raw(to_return) as Ptr
     }
