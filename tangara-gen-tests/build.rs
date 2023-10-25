@@ -1,4 +1,4 @@
-use tangara::gen::Generator;
+use tangara_gen::Generator;
 
 fn main() {
     Generator::new("MyPackage")
@@ -8,7 +8,7 @@ fn main() {
         .generate_to_file("src/bindings.rs")
         .unwrap();
 
-    Generator::new("Tangara")
+    /*Generator::new("Tangara")
         .parse_file("../tangara/src/lib.rs")
         .parse_file("../tangara/src/context.rs")
         .parse_file("../tangara/src/runtime.rs")
@@ -17,5 +17,5 @@ fn main() {
             "crate::runtime::*",
         ])
         .generate_to_file("../tangara/src/bindings.rs")
-        .unwrap();
+        .unwrap();*/
 }

@@ -10,4 +10,4 @@ crate-type = ["cdylib"]
 tangara = { version = "0.1.0", path = "../tangara" }
 
 [build-dependencies]
-tangara = { version = "0.1.0", path = "../tangara", features = ["gen"] }
+tangara-gen = { version = "0.1.0", path = "../tangara-gen" }
