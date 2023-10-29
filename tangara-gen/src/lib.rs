@@ -6,9 +6,9 @@ use syn::{FnArg, ImplItem, Item, parse_file, Pat, PatType, ReturnType, Signature
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 
-const PACKAGE_SECRET: [u8; 192] = const_custom_default_secret(0x0304);
-const TYPE_SECRET: [u8; 192] = const_custom_default_secret(0x1324);
-const FUNC_SECRET: [u8; 192] = const_custom_default_secret(0x4751);
+const PACKAGE_SECRET: [u8; 192] = const_custom_default_secret(772);
+const TYPE_SECRET: [u8; 192] = const_custom_default_secret(4900);
+const FUNC_SECRET: [u8; 192] = const_custom_default_secret(18257);
 
 pub struct Generator {
     // TODO: custom constructor function analogs

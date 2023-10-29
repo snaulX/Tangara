@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/tangara/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/tangara-gen/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tangara-highlevel/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/tangara-highlevel/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
