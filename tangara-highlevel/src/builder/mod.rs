@@ -1,4 +1,4 @@
-use crate::{Package, Type, Visibility};
+use crate::{Constructor, Package, Property, Type, Visibility};
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 use crate::builder::class_builder::ClassBuilder;
@@ -6,6 +6,8 @@ use crate::builder::enum_builder::EnumBuilder;
 
 pub mod enum_builder;
 pub mod class_builder;
+pub mod constructor_builder;
+pub mod property_builder;
 
 const PACKAGE_SECRET: [u8; 192] = const_custom_default_secret(772);
 const TYPE_SECRET: [u8; 192] = const_custom_default_secret(4900);
@@ -24,6 +26,16 @@ pub(crate) fn generate_fnid(name: &String) -> u64 {
 pub trait TypeBuilder {
     fn get_type(&self) -> Type;
     fn build(&mut self) -> &mut PackageBuilder;
+}
+
+pub trait ConstructorCollector {
+    fn get_default_visibility(&self) -> Visibility;
+    fn add_constructor(&mut self, constructor: Constructor);
+}
+
+pub trait PropertyCollector {
+    fn get_default_visibility(&self) -> Visibility;
+    fn add_property(&mut self, property: Property);
 }
 
 pub struct PackageBuilder {

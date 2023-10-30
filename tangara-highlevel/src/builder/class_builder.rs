@@ -1,5 +1,7 @@
-use crate::builder::{generate_typeid, PackageBuilder, TypeBuilder};
-use crate::{Argument, Constructor, Property, Type, TypeRef, Visibility};
+use crate::builder::{ConstructorCollector, generate_typeid, PackageBuilder, PropertyCollector, TypeBuilder};
+use crate::{Constructor, Property, Type, TypeRef, Visibility};
+use crate::builder::constructor_builder::ConstructorBuilder;
+use crate::builder::property_builder::PropertyBuilder;
 use crate::TypeKind::Class;
 
 pub struct ClassBuilder<'a> {
@@ -27,11 +29,11 @@ impl<'a> ClassBuilder<'a> {
         self
     }
 
-    pub fn add_constructor(&'a mut self) -> ConstructorBuilder<'a> {
+    pub fn add_constructor(&'a mut self) -> ConstructorBuilder<'a, Self> {
         ConstructorBuilder::new(self, self.builder.constructor_visibility)
     }
 
-    pub fn add_property(&'a mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<'a> {
+    pub fn add_property(&'a mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<'a, Self> {
         PropertyBuilder::new(self, prop_type, name)
     }
 }
@@ -54,84 +56,22 @@ impl<'a> TypeBuilder for ClassBuilder<'a> {
     }
 }
 
-pub struct PropertyBuilder<'a> {
-    builder: &'a mut ClassBuilder<'a>,
-    getter_visibility: Visibility,
-    setter_visibility: Option<Visibility>,
-    prop_type: TypeRef,
-    name: String
-}
-
-impl<'a> PropertyBuilder<'a> {
-    pub(crate) fn new(builder: &'a mut ClassBuilder<'a>, prop_type: TypeRef, name: &str) -> Self {
-        Self {
-            builder,
-            getter_visibility: Visibility::Public/*builder.builder.property_visibility*/,
-            setter_visibility: None,
-            prop_type,
-            name: name.to_string()
-        }
+impl<'a> ConstructorCollector for ClassBuilder<'a> {
+    fn get_default_visibility(&self) -> Visibility {
+        self.builder.constructor_visibility
     }
 
-    pub fn getter_visibility(&mut self, vis: Visibility) -> &mut Self {
-        self.getter_visibility = vis;
-        self
-    }
-
-    pub fn setter_visibility(&mut self, vis: Visibility) -> &mut Self {
-        self.setter_visibility = Some(vis);
-        self
-    }
-
-    pub fn get_prop(&self) -> Property {
-        Property {
-            getter_visibility: self.getter_visibility,
-            setter_visibility: self.setter_visibility,
-            prop_type: self.prop_type.clone(),
-            name: self.name.clone(),
-        }
-    }
-
-    pub fn build(&'a mut self) -> &'a mut ClassBuilder<'a> {
-        self.builder.properties.push(self.get_prop());
-        self.builder
+    fn add_constructor(&mut self, constructor: Constructor) {
+        self.constructors.push(constructor)
     }
 }
 
-pub struct ConstructorBuilder<'a> {
-    builder: &'a mut ClassBuilder<'a>,
-    vis: Visibility,
-    args: Vec<Argument>
-}
-
-impl<'a> ConstructorBuilder<'a> {
-    pub(crate) fn new(builder: &'a mut ClassBuilder<'a>, vis: Visibility) -> Self {
-        Self {
-            builder,
-            vis,
-            args: Vec::new()
-        }
+impl<'a> PropertyCollector for ClassBuilder<'a> {
+    fn get_default_visibility(&self) -> Visibility {
+        self.builder.property_visibility
     }
 
-    pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
-        self.vis = vis;
-        self
-    }
-
-    pub fn arg(&mut self, arg_type: TypeRef, name: &str) -> &mut Self {
-        self.args.push(Argument(arg_type, name.to_string(), None));
-        self
-    }
-
-    pub fn get_ctor(&self) -> Constructor {
-        Constructor {
-            vis: self.vis,
-            args: self.args.to_vec(),
-        }
-    }
-
-    pub fn build(&'a mut self) -> &'a mut ClassBuilder<'a> {
-        self.builder.constructors.push(self.get_ctor());
-        self.builder
+    fn add_property(&mut self, property: Property) {
+        self.properties.push(property)
     }
 }
