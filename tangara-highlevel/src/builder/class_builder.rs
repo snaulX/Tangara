@@ -1,12 +1,13 @@
 use crate::builder::{generate_typeid, PackageBuilder, TypeBuilder};
-use crate::{Argument, Constructor, Type, TypeRef, Visibility};
+use crate::{Argument, Constructor, Property, Type, TypeRef, Visibility};
 use crate::TypeKind::Class;
 
 pub struct ClassBuilder<'a> {
     builder: &'a mut PackageBuilder,
     name: String,
     vis: Visibility,
-    constructors: Vec<Constructor>
+    constructors: Vec<Constructor>,
+    properties: Vec<Property>
 }
 
 impl<'a> ClassBuilder<'a> {
@@ -16,7 +17,8 @@ impl<'a> ClassBuilder<'a> {
             builder,
             name: name.to_string(),
             vis,
-            constructors: Vec::new()
+            constructors: Vec::new(),
+            properties: Vec::new()
         }
     }
 
@@ -28,6 +30,10 @@ impl<'a> ClassBuilder<'a> {
     pub fn add_constructor(&'a mut self) -> ConstructorBuilder<'a> {
         ConstructorBuilder::new(self, self.builder.constructor_visibility)
     }
+
+    pub fn add_property(&'a mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<'a> {
+        PropertyBuilder::new(self, prop_type, name)
+    }
 }
 
 impl<'a> TypeBuilder for ClassBuilder<'a> {
@@ -38,12 +44,56 @@ impl<'a> TypeBuilder for ClassBuilder<'a> {
             name: self.name.clone(),
             id: generate_typeid(&self.name),
             attrs: vec![],
-            kind: Class(self.constructors.to_vec())
+            kind: Class(self.constructors.to_vec(), self.properties.to_vec())
         }
     }
 
     fn build(&mut self) -> &mut PackageBuilder {
         self.builder.types.push(self.get_type());
+        self.builder
+    }
+}
+
+pub struct PropertyBuilder<'a> {
+    builder: &'a mut ClassBuilder<'a>,
+    getter_visibility: Visibility,
+    setter_visibility: Option<Visibility>,
+    prop_type: TypeRef,
+    name: String
+}
+
+impl<'a> PropertyBuilder<'a> {
+    pub(crate) fn new(builder: &'a mut ClassBuilder<'a>, prop_type: TypeRef, name: &str) -> Self {
+        Self {
+            builder,
+            getter_visibility: Visibility::Public/*builder.builder.property_visibility*/,
+            setter_visibility: None,
+            prop_type,
+            name: name.to_string()
+        }
+    }
+
+    pub fn getter_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.getter_visibility = vis;
+        self
+    }
+
+    pub fn setter_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.setter_visibility = Some(vis);
+        self
+    }
+
+    pub fn get_prop(&self) -> Property {
+        Property {
+            getter_visibility: self.getter_visibility,
+            setter_visibility: self.setter_visibility,
+            prop_type: self.prop_type.clone(),
+            name: self.name.clone(),
+        }
+    }
+
+    pub fn build(&'a mut self) -> &'a mut ClassBuilder<'a> {
+        self.builder.properties.push(self.get_prop());
         self.builder
     }
 }

@@ -1,4 +1,4 @@
-use tangara_highlevel::{TypeRef, Visibility};
+use tangara_highlevel::{typeref_by_name, TypeRef, Visibility};
 use tangara_highlevel::builder::{PackageBuilder, TypeBuilder};
 
 #[test]
@@ -25,13 +25,14 @@ fn alpha_engine() {
             .set_visibility(Visibility::Public)
             .add_constructor()
                 .set_visibility(Visibility::Public)
-                .arg(TypeRef::Name("CString".to_string()), "title")
-                .arg(TypeRef::Name("int".to_string()), "x")
-                .arg(TypeRef::Name("int".to_string()), "y")
-                .arg(TypeRef::Name("int".to_string()), "width")
-                .arg(TypeRef::Name("int".to_string()), "height")
-                .arg(TypeRef::Name("WindowFlags".to_string()), "state")
+                .arg(typeref_by_name("CString"), "title")
+                .arg(typeref_by_name("int"), "x")
+                .arg(typeref_by_name("int"), "y")
+                .arg(typeref_by_name("int"), "width")
+                .arg(typeref_by_name("int"), "height")
+                .arg(typeref_by_name("WindowFlags"), "state")
                 .build()
+            .add_property(typeref_by_name("WindowFlags"), "WindowState").build()
             .build()
         .build();
     println!("Alpha.Window package: {:?}", alphawindow);

@@ -31,6 +31,7 @@ pub struct PackageBuilder {
     namespace: String,
     type_visibility: Visibility,
     constructor_visibility: Visibility,
+    property_visibility: Visibility,
     types: Vec<Type>
 }
 
@@ -41,6 +42,7 @@ impl PackageBuilder {
             namespace: name.to_string(),
             type_visibility: Visibility::Public,
             constructor_visibility: Visibility::Public,
+            property_visibility: Visibility::Public,
             types: Vec::new()
         }
     }
