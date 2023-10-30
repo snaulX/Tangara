@@ -1,5 +1,5 @@
-use tangara_highlevel::Visibility;
-use tangara_highlevel::builder::PackageBuilder;
+use tangara_highlevel::{TypeRef, Visibility};
+use tangara_highlevel::builder::{PackageBuilder, TypeBuilder};
 
 #[test]
 #[cfg(feature = "builder")]
@@ -9,8 +9,8 @@ fn alpha_engine() {
         id: 1200984046632254291
     };*/
 
-    // Create AlphaWindow
-    let alphawindow = PackageBuilder::new("AlphaWindow")
+    // Create AlphaWindow package
+    let alphawindow = PackageBuilder::new("Alpha.Window")
         .set_namespace("Alpha.Window")
         .create_enum("WindowFlags")
             .bitflags()
@@ -23,7 +23,16 @@ fn alpha_engine() {
             .build()
         .create_class("Window")
             .set_visibility(Visibility::Public)
+            .add_constructor()
+                .set_visibility(Visibility::Public)
+                .arg(TypeRef::Name("CString".to_string()), "title")
+                .arg(TypeRef::Name("int".to_string()), "x")
+                .arg(TypeRef::Name("int".to_string()), "y")
+                .arg(TypeRef::Name("int".to_string()), "width")
+                .arg(TypeRef::Name("int".to_string()), "height")
+                .arg(TypeRef::Name("WindowFlags".to_string()), "state")
+                .build()
             .build()
         .build();
-    println!("Alpha window id: {:?}", alphawindow);
+    println!("Alpha.Window package: {:?}", alphawindow);
 }

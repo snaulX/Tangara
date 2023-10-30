@@ -15,7 +15,7 @@ pub enum Visibility {
 
 #[derive(Debug, Clone)]
 pub enum TypeKind {
-    Class(),
+    Class(Vec<Constructor>),
     Enum(HashMap<String, Value>),
     Interface()
 }
@@ -42,6 +42,9 @@ pub enum Value {
 }
 
 #[derive(Debug, Clone)]
+pub struct Argument(TypeRef, String, Option<Value>);
+
+#[derive(Debug, Clone)]
 pub struct Attribute(TypeRef, Vec<Value>);
 
 //#[derive(Serialize, Deserialize)]
@@ -60,4 +63,10 @@ pub struct Type {
     pub id: u64,
     pub attrs: Vec<Attribute>,
     pub kind: TypeKind
+}
+
+#[derive(Debug, Clone)]
+pub struct Constructor {
+    pub vis: Visibility,
+    pub args: Vec<Argument>
 }

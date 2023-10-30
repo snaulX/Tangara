@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::builder::{generate_typeid, PackageBuilder};
+use crate::builder::{generate_typeid, PackageBuilder, TypeBuilder};
 use crate::{Attribute, Type, TypeRef, Value, Visibility};
 use crate::TypeKind::Enum;
 
@@ -34,16 +34,22 @@ impl<'a> EnumBuilder<'a> {
         self.literals.insert(literal.to_string(), value);
         self
     }
+}
 
-    pub fn build(&'a mut self) -> &'a mut PackageBuilder {
-        self.builder.types.push(Type {
+impl<'a> TypeBuilder for EnumBuilder<'a> {
+    fn get_type(&self) -> Type {
+        Type {
             vis: self.vis.clone(),
             namespace: self.builder.namespace.clone(),
             name: self.name.clone(),
             id: generate_typeid(&self.name),
             attrs: vec![],
             kind: Enum(self.literals.clone())
-        });
+        }
+    }
+
+    fn build(&mut self) -> &mut PackageBuilder {
+        self.builder.types.push(self.get_type());
         self.builder
     }
 }
@@ -63,10 +69,12 @@ impl<'a> BitflagsBuilder<'a> {
         self.builder.literal_value(literal, Value::UInt(value));
         self
     }
+}
 
-    pub fn build(&'a mut self) -> &'a mut PackageBuilder {
-        let enum_builder = &mut self.builder;
-        enum_builder.builder.types.push(Type {
+impl<'a> TypeBuilder for BitflagsBuilder<'a> {
+    fn get_type(&self) -> Type {
+        let enum_builder = &self.builder;
+        Type {
             vis: enum_builder.vis.clone(),
             namespace: enum_builder.builder.namespace.clone(),
             name: enum_builder.name.clone(),
@@ -75,7 +83,11 @@ impl<'a> BitflagsBuilder<'a> {
                 Attribute(TypeRef::Name("Flags".to_string()), vec![])
             ],
             kind: Enum(enum_builder.literals.clone())
-        });
+        }
+    }
+
+    fn build(&mut self) -> &mut PackageBuilder {
+        self.builder.builder.types.push(self.get_type());
         self.builder.builder
     }
 }

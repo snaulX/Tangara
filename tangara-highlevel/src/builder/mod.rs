@@ -21,10 +21,16 @@ pub(crate) fn generate_fnid(name: &String) -> u64 {
     xxh3_64_with_secret(name.as_bytes(), &FUNC_SECRET)
 }
 
+pub trait TypeBuilder {
+    fn get_type(&self) -> Type;
+    fn build(&mut self) -> &mut PackageBuilder;
+}
+
 pub struct PackageBuilder {
     name: String,
     namespace: String,
     type_visibility: Visibility,
+    constructor_visibility: Visibility,
     types: Vec<Type>
 }
 
@@ -34,6 +40,7 @@ impl PackageBuilder {
             name: name.to_string(),
             namespace: name.to_string(),
             type_visibility: Visibility::Public,
+            constructor_visibility: Visibility::Public,
             types: Vec::new()
         }
     }
