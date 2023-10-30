@@ -15,11 +15,21 @@ pub enum Visibility {
 }
 
 #[derive(Debug, Clone)]
+pub enum ArgumentKind {
+    Default,
+    DefaultValue(Value),
+    Out,
+    Ref
+}
+
+#[derive(Debug, Clone)]
 pub enum TypeKind {
     Class(Vec<Constructor>, Vec<Property>, Vec<Method>),
     Enum(HashMap<String, Value>),
     Interface(Vec<Property>),
-    Struct(Vec<Constructor>, Vec<Property>)
+    // TODO: do something with Struct or remove it because it tries to full copy of Class
+    Struct(Vec<Constructor>, Vec<Property>),
+    TypeAlias(Box<TypeRef>)
 }
 
 // TypeRef block
@@ -30,7 +40,8 @@ pub enum TypeRef {
     Direct(Type),
 
     //Array(TypeRef),
-    //Tuple(Vec<TypeRef>)
+    //Tuple(Vec<TypeRef>),
+    //Fn(Option<TypeRef>, Vec<TypeRef>)
 }
 
 impl From<String> for TypeRef {
@@ -147,7 +158,7 @@ impl From<&str> for Value {
 
 // Structs block
 #[derive(Debug, Clone)]
-pub struct Argument(TypeRef, String, Option<Value>);
+pub struct Argument(TypeRef, String, ArgumentKind);
 
 #[derive(Debug, Clone)]
 pub struct Attribute(TypeRef, Vec<Value>);

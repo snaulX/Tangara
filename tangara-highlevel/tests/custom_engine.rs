@@ -43,6 +43,14 @@ fn alpha_engine() {
             .add_method("GetNativeHandle")
                 .return_type(TypeRef::from("Ptr"))
                 .build()
+            .add_method("SetSize")
+                .arg(TypeRef::from("int"), "x")
+                .arg(TypeRef::from("int"), "y")
+                .build()
+            .add_method("GetSize")
+                .arg_out(TypeRef::from("int"), "x")
+                .arg_out(TypeRef::from("int"), "x")
+                .build()
             .build()
         .build();
     println!("Alpha.Window package: {:?}", alphawindow);

@@ -26,11 +26,13 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
         }
     }
 
+    /// Set visibility for getter
     pub fn getter_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.getter_visibility = vis;
         self
     }
 
+    /// Set visibility for setter. If setter wasn't exists - it creates it.
     pub fn setter_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.setter_visibility = Some(vis);
         self
@@ -46,6 +48,7 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
         }
     }
 
+    /// Pass property to parent builder and returns it
     pub fn build(&'a mut self) -> &'a mut T {
         self.builder.add_property(self.get_property());
         self.builder

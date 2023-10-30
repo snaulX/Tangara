@@ -1,8 +1,9 @@
-use crate::{Constructor, Package, Property, Type, Visibility};
+use crate::{Constructor, Package, Property, Type, TypeRef, Visibility};
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 use crate::builder::class_builder::ClassBuilder;
 use crate::builder::enum_builder::EnumBuilder;
+use crate::TypeKind::TypeAlias;
 
 pub mod enum_builder;
 pub mod class_builder;
@@ -64,6 +65,18 @@ impl PackageBuilder {
 
     pub fn create_enum(&mut self, name: &str) -> EnumBuilder {
         EnumBuilder::new(self, name)
+    }
+
+    pub fn create_alias(&mut self, vis: Visibility, name: &str, alias: TypeRef) -> &mut Self {
+        self.types.push(Type {
+            vis,
+            namespace: self.namespace.clone(),
+            name: name.to_string(),
+            id: generate_type_id(&name.to_string()),
+            attrs: Vec::new(),
+            kind: TypeAlias(Box::new(alias)),
+        });
+        self
     }
 
     pub fn build(&self) -> Package {
