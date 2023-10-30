@@ -33,6 +33,16 @@ fn alpha_engine() {
                 .arg(typeref_by_name("WindowFlags"), "state")
                 .build()
             .add_property(typeref_by_name("WindowFlags"), "WindowState").build()
+            .add_method("Update").build()
+            .add_method("Show").build()
+            .add_method("Hide").build()
+            .add_method("Close").build()
+            .add_method("ShouldClose")
+                .return_type(typeref_by_name("bool"))
+                .build()
+            .add_method("GetNativeHandle")
+                .return_type(typeref_by_name("Ptr"))
+                .build()
             .build()
         .build();
     println!("Alpha.Window package: {:?}", alphawindow);

@@ -1,5 +1,9 @@
-use crate::builder::ConstructorCollector;
 use crate::{Argument, Constructor, TypeRef, Visibility};
+
+pub trait ConstructorCollector {
+    fn get_default_visibility(&self) -> Visibility;
+    fn add_constructor(&mut self, constructor: Constructor);
+}
 
 pub struct ConstructorBuilder<'a, T: ConstructorCollector> {
     builder: &'a mut T,

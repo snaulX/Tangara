@@ -1,5 +1,10 @@
-use crate::builder::PropertyCollector;
+use crate::builder::generate_member_id;
 use crate::{Property, TypeRef, Visibility};
+
+pub trait PropertyCollector {
+    fn get_default_visibility(&self) -> Visibility;
+    fn add_property(&mut self, property: Property);
+}
 
 pub struct PropertyBuilder<'a, T: PropertyCollector> {
     builder: &'a mut T,
@@ -37,6 +42,7 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
             setter_visibility: self.setter_visibility,
             prop_type: self.prop_type.clone(),
             name: self.name.clone(),
+            id: generate_member_id(&self.name)
         }
     }
 

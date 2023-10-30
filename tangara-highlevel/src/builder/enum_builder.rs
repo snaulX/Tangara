@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::builder::{generate_typeid, PackageBuilder, TypeBuilder};
+use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
 use crate::{Attribute, Type, TypeRef, Value, Visibility};
 use crate::TypeKind::Enum;
 
@@ -42,7 +42,7 @@ impl<'a> TypeBuilder for EnumBuilder<'a> {
             vis: self.vis.clone(),
             namespace: self.builder.namespace.clone(),
             name: self.name.clone(),
-            id: generate_typeid(&self.name),
+            id: generate_type_id(&self.name),
             attrs: vec![],
             kind: Enum(self.literals.clone())
         }
@@ -78,7 +78,7 @@ impl<'a> TypeBuilder for BitflagsBuilder<'a> {
             vis: enum_builder.vis.clone(),
             namespace: enum_builder.builder.namespace.clone(),
             name: enum_builder.name.clone(),
-            id: generate_typeid(&enum_builder.name),
+            id: generate_type_id(&enum_builder.name),
             attrs: vec![
                 Attribute(TypeRef::Name("Flags".to_string()), vec![])
             ],

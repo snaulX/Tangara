@@ -15,18 +15,24 @@ pub enum Visibility {
 
 #[derive(Debug, Clone)]
 pub enum TypeKind {
-    Class(Vec<Constructor>, Vec<Property>),
+    Class(Vec<Constructor>, Vec<Property>, Vec<Method>),
     Enum(HashMap<String, Value>),
-    Interface()
+    Interface(Vec<Property>),
+    Struct(Vec<Constructor>, Vec<Property>)
 }
 
 #[derive(Debug, Clone)]
 pub enum TypeRef {
     Name(String),
     Id(u64),
-    Direct(Type)
+    Direct(Type),
+
+    //Array(TypeRef),
+    //Tuple(Vec<TypeRef>)
 }
 
+/// Shortcut for TypeRef::Name("name".to_string())
+#[inline]
 pub fn typeref_by_name(name: &str) -> TypeRef {
     TypeRef::Name(name.to_string())
 }
@@ -80,5 +86,15 @@ pub struct Property {
     pub getter_visibility: Visibility,
     pub setter_visibility: Option<Visibility>,
     pub prop_type: TypeRef,
-    pub name: String
+    pub name: String,
+    pub id: u64
+}
+
+#[derive(Debug, Clone)]
+pub struct Method {
+    pub vis: Visibility,
+    pub name: String,
+    pub id: u64,
+    pub args: Vec<Argument>,
+    pub return_type: Option<TypeRef>
 }
