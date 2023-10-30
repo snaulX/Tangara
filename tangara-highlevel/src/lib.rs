@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 #[cfg(feature = "builder")]
 pub mod builder;
 
+// Enums block
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Visibility {
     Private,
@@ -21,6 +22,7 @@ pub enum TypeKind {
     Struct(Vec<Constructor>, Vec<Property>)
 }
 
+// TypeRef block
 #[derive(Debug, Clone)]
 pub enum TypeRef {
     Name(String),
@@ -31,12 +33,31 @@ pub enum TypeRef {
     //Tuple(Vec<TypeRef>)
 }
 
-/// Shortcut for TypeRef::Name("name".to_string())
-#[inline]
-pub fn typeref_by_name(name: &str) -> TypeRef {
-    TypeRef::Name(name.to_string())
+impl From<String> for TypeRef {
+    fn from(value: String) -> Self {
+        TypeRef::Name(value)
+    }
 }
 
+impl From<&str> for TypeRef {
+    fn from(value: &str) -> Self {
+        TypeRef::Name(value.to_string())
+    }
+}
+
+impl From<u64> for TypeRef {
+    fn from(value: u64) -> Self {
+        TypeRef::Id(value)
+    }
+}
+
+impl From<Type> for TypeRef {
+    fn from(value: Type) -> Self {
+        TypeRef::Direct(value)
+    }
+}
+
+// Value block
 #[derive(Debug, Clone)]
 pub enum Value {
     Null,
@@ -45,12 +66,86 @@ pub enum Value {
     Short(i16),
     Int(i32),
     Long(i64),
+    SByte(i8),
     UShort(u16),
     UInt(u32),
     ULong(u64),
     String(String),
 }
 
+impl Default for Value {
+    fn default() -> Self {
+        Value::Null
+    }
+}
+
+impl From<bool> for Value {
+    fn from(value: bool) -> Self {
+        Value::Bool(value)
+    }
+}
+
+impl From<u8> for Value {
+    fn from(value: u8) -> Self {
+        Value::Byte(value)
+    }
+}
+
+impl From<i16> for Value {
+    fn from(value: i16) -> Self {
+        Value::Short(value)
+    }
+}
+
+impl From<i32> for Value {
+    fn from(value: i32) -> Self {
+        Value::Int(value)
+    }
+}
+
+impl From<i64> for Value {
+    fn from(value: i64) -> Self {
+        Value::Long(value)
+    }
+}
+
+impl From<i8> for Value {
+    fn from(value: i8) -> Self {
+        Value::SByte(value)
+    }
+}
+
+impl From<u16> for Value {
+    fn from(value: u16) -> Self {
+        Value::UShort(value)
+    }
+}
+
+impl From<u32> for Value {
+    fn from(value: u32) -> Self {
+        Value::UInt(value)
+    }
+}
+
+impl From<u64> for Value {
+    fn from(value: u64) -> Self {
+        Value::ULong(value)
+    }
+}
+
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Value::String(value)
+    }
+}
+
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Value::String(value.to_string())
+    }
+}
+
+// Structs block
 #[derive(Debug, Clone)]
 pub struct Argument(TypeRef, String, Option<Value>);
 

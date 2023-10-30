@@ -1,4 +1,4 @@
-use tangara_highlevel::{typeref_by_name, TypeRef, Visibility};
+use tangara_highlevel::{TypeRef, Visibility};
 use tangara_highlevel::builder::{PackageBuilder, TypeBuilder};
 
 #[test]
@@ -25,23 +25,23 @@ fn alpha_engine() {
             .set_visibility(Visibility::Public)
             .add_constructor()
                 .set_visibility(Visibility::Public)
-                .arg(typeref_by_name("CString"), "title")
-                .arg(typeref_by_name("int"), "x")
-                .arg(typeref_by_name("int"), "y")
-                .arg(typeref_by_name("int"), "width")
-                .arg(typeref_by_name("int"), "height")
-                .arg(typeref_by_name("WindowFlags"), "state")
+                .arg(TypeRef::from("CString"), "title")
+                .arg(TypeRef::from("int"), "x")
+                .arg(TypeRef::from("int"), "y")
+                .arg(TypeRef::from("int"), "width")
+                .arg(TypeRef::from("int"), "height")
+                .arg(TypeRef::from("WindowFlags"), "state")
                 .build()
-            .add_property(typeref_by_name("WindowFlags"), "WindowState").build()
+            .add_property(TypeRef::from("WindowFlags"), "WindowState").build()
             .add_method("Update").build()
             .add_method("Show").build()
             .add_method("Hide").build()
             .add_method("Close").build()
             .add_method("ShouldClose")
-                .return_type(typeref_by_name("bool"))
+                .return_type(TypeRef::from("bool"))
                 .build()
             .add_method("GetNativeHandle")
-                .return_type(typeref_by_name("Ptr"))
+                .return_type(TypeRef::from("Ptr"))
                 .build()
             .build()
         .build();
