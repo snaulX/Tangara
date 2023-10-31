@@ -39,9 +39,8 @@ pub enum TypeRef {
     Id(u64),
     Direct(Type),
 
-    //Array(TypeRef),
-    //Tuple(Vec<TypeRef>),
-    //Fn(Option<TypeRef>, Vec<TypeRef>)
+    Tuple(Vec<TypeRef>),
+    Fn(Option<Box<TypeRef>>, Vec<TypeRef>)
 }
 
 impl From<String> for TypeRef {
@@ -158,7 +157,7 @@ impl From<&str> for Value {
 
 // Structs block
 #[derive(Debug, Clone)]
-pub struct Argument(TypeRef, String, ArgumentKind);
+pub struct Argument(Vec<Attribute>, TypeRef, String, ArgumentKind);
 
 #[derive(Debug, Clone)]
 pub struct Attribute(TypeRef, Vec<Value>);

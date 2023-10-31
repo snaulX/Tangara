@@ -1,4 +1,4 @@
-use crate::{Argument, ArgumentKind, Constructor, TypeRef, Value, Visibility};
+use crate::{Argument, ArgumentKind, Attribute, Constructor, TypeRef, Value, Visibility};
 
 pub trait ConstructorCollector {
     fn get_default_visibility(&self) -> Visibility;
@@ -8,6 +8,7 @@ pub trait ConstructorCollector {
 pub struct ConstructorBuilder<'a, T: ConstructorCollector> {
     builder: &'a mut T,
     vis: Visibility,
+    arg_attrs: Vec<Attribute>,
     args: Vec<Argument>
 }
 
@@ -16,6 +17,7 @@ impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
         Self {
             builder,
             vis,
+            arg_attrs: Vec::new(),
             args: Vec::new()
         }
     }
@@ -25,25 +27,47 @@ impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
         self
     }
 
+    /// Push attribute before next argument
+    pub fn arg_attribute(&mut self, attribute: Attribute) -> &mut Self {
+        self.arg_attrs.push(attribute);
+        self
+    }
+
+    #[inline]
+    fn add_argument(&mut self, arg_type: TypeRef, name: &str, kind: ArgumentKind) -> &mut Self {
+        self.args.push(Argument(
+            self.arg_attrs.to_vec(),
+            arg_type,
+            name.to_string(),
+            kind
+        ));
+        self.arg_attrs.clear();
+        self
+    }
+
     /// Creates common argument with given type and name
     pub fn arg(&mut self, arg_type: TypeRef, name: &str) -> &mut Self {
-        self.args.push(Argument(arg_type, name.to_string(), ArgumentKind::Default));
-        self
+        self.add_argument(arg_type, name, ArgumentKind::Default)
     }
 
     /// Creates common argument with given type, name and default value
     pub fn arg_value(&mut self, arg_type: TypeRef, name: &str, default_value: Value) -> &mut Self {
-        self.args.push(Argument(arg_type, name.to_string(), ArgumentKind::DefaultValue(default_value)));
-        self
+        self.add_argument(arg_type, name, ArgumentKind::DefaultValue(default_value))
     }
+
+    /*
+    Does we really need Out argument in constructor?
+
+    /// Creates output argument with given type and name
+    pub fn arg_out(&mut self, arg_type: TypeRef, name: &str) -> &mut Self {
+        self.add_argument(arg_type, name, ArgumentKind::Out)
+    }
+     */
 
     /// Creates reference argument with given type and name
     pub fn arg_ref(&mut self, arg_type: TypeRef, name: &str) -> &mut Self {
-        self.args.push(Argument(arg_type, name.to_string(), ArgumentKind::Ref));
-        self
+        self.add_argument(arg_type, name, ArgumentKind::Ref)
     }
-
-    // Does we need 'out' argument in constructor?
 
     pub fn get_constructor(&self) -> Constructor {
         Constructor {
