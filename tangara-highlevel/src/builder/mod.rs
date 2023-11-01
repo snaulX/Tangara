@@ -3,12 +3,14 @@ use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 use crate::builder::class_builder::ClassBuilder;
 use crate::builder::enum_builder::EnumBuilder;
+use crate::builder::interface_builder::InterfaceBuilder;
 use crate::builder::struct_builder::StructBuilder;
 use crate::TypeKind::TypeAlias;
 
 pub mod enum_builder;
 pub mod class_builder;
 pub mod struct_builder;
+pub mod interface_builder;
 pub mod constructor_builder;
 pub mod property_builder;
 pub mod method_builder;
@@ -70,6 +72,10 @@ impl PackageBuilder {
 
     pub fn create_enum(&mut self, name: &str) -> EnumBuilder {
         EnumBuilder::new(self, name)
+    }
+
+    pub fn create_interface(&mut self, name: &str) -> InterfaceBuilder {
+        InterfaceBuilder::new(self, name)
     }
 
     pub fn create_alias(&mut self, vis: Visibility, name: &str, alias: TypeRef) -> &mut Self {

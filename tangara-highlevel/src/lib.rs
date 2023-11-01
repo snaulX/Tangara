@@ -26,7 +26,7 @@ pub enum ArgumentKind {
 pub enum TypeKind {
     Class(Vec<Constructor>, Vec<Property>, Vec<Method>),
     Enum(HashMap<String, Value>),
-    Interface(Vec<Property>),
+    Interface(Vec<Property>, Vec<Method>),
     // TODO: do something with Struct or remove it because it tries to full copy of Class
     Struct(Vec<Constructor>, Vec<Property>),
     TypeAlias(Box<TypeRef>)

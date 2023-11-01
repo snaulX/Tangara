@@ -4,12 +4,7 @@ use tangara_highlevel::builder::{PackageBuilder, TypeBuilder};
 #[test]
 #[cfg(feature = "builder")]
 fn alpha_engine() {
-    /*let alphaengine = Package {
-        name: "AlphaEngine".to_string(),
-        id: 1200984046632254291
-    };*/
-
-    // Create AlphaWindow package
+    // Create Alpha.Window package
     let alphawindow = PackageBuilder::new("Alpha.Window")
         .set_namespace("Alpha.Window")
         .create_enum("WindowFlags")
@@ -51,7 +46,25 @@ fn alpha_engine() {
                 .arg_out(TypeRef::from("int"), "x")
                 .arg_out(TypeRef::from("int"), "x")
                 .build()
+            .add_method("SetFramebufferResizeCallback")
+                .arg(TypeRef::from("Ptr"), "ptr")
+                .arg(TypeRef::Fn(
+                    None,
+                    vec![TypeRef::from("Ptr"), TypeRef::from("int"), TypeRef::from("int")]),
+                     "callback")
+                .build()
             .build()
         .build();
     println!("Alpha.Window package: {:?}", alphawindow);
+
+    // Create AlphaEngine package
+    let alphaengine = PackageBuilder::new("AlphaEngine")
+        .set_namespace("Alpha.Engine")
+        .create_interface("ISystem")
+            .add_method("Init").build()
+            .add_method("Enable").build()
+            .add_method("Disable").build()
+            .build()
+        .build();
+    println!("Alpha Engine package: {:?}", alphaengine);
 }
