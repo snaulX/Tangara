@@ -1,6 +1,7 @@
 use crate::{Package, Type, TypeRef, Visibility};
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
+use crate::builder::alias_builder::TypeAliasBuilder;
 use crate::builder::class_builder::ClassBuilder;
 use crate::builder::enum_builder::EnumBuilder;
 use crate::builder::interface_builder::InterfaceBuilder;
@@ -11,6 +12,7 @@ pub mod enum_builder;
 pub mod class_builder;
 pub mod struct_builder;
 pub mod interface_builder;
+pub mod alias_builder;
 pub mod constructor_builder;
 pub mod property_builder;
 pub mod method_builder;
@@ -78,16 +80,8 @@ impl PackageBuilder {
         InterfaceBuilder::new(self, name)
     }
 
-    pub fn create_alias(&mut self, vis: Visibility, name: &str, alias: TypeRef) -> &mut Self {
-        self.types.push(Type {
-            vis,
-            namespace: self.namespace.clone(),
-            name: name.to_string(),
-            id: generate_type_id(&name.to_string()),
-            attrs: Vec::new(),
-            kind: TypeAlias(Box::new(alias)),
-        });
-        self
+    pub fn create_alias(&mut self, name: &str, alias: TypeRef) -> TypeAliasBuilder {
+        TypeAliasBuilder::new(self, name, alias)
     }
 
     pub fn build(&self) -> Package {
