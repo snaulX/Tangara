@@ -11,6 +11,7 @@ use tangara_highlevel::builder::PackageBuilder;
 use tangara_highlevel::Package;
 
 mod package_generator;
+pub use package_generator::*;
 
 const TYPE_SECRET: [u8; 192] = const_custom_default_secret(4900);
 const FUNC_SECRET: [u8; 192] = const_custom_default_secret(18257);

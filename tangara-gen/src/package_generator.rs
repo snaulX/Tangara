@@ -6,7 +6,7 @@ use proc_macro2::Ident;
 use quote::ToTokens;
 use syn::{Item, parse_file, Visibility};
 use tangara_highlevel::builder::*;
-use tangara_highlevel::Visibility as TgVis;
+use tangara_highlevel::{Package, Visibility as TgVis};
 
 pub struct Config {
     pub ctor_names: Vec<String>,
@@ -96,5 +96,16 @@ impl PackageGenerator {
     pub fn parse_file<P: AsRef<Path>>(self, path: P) -> Self {
         let rust_code = std::fs::read_to_string(path).expect("Failed to read file");
         self.parse_code(&rust_code)
+    }
+
+    pub fn generate(self) -> Package {
+        for (_, cb) in self.structs {
+            cb.build();
+        }
+        self.package_builder.borrow().build()
+    }
+
+    pub fn generate_to_file<P: AsRef<Path>>(self, path: P) -> std::io::Result<()> {
+        std::fs::write(path, format!("{:?}", self.generate()))
     }
 }

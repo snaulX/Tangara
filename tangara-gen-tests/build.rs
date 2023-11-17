@@ -1,12 +1,16 @@
-use tangara_gen::Generator;
+use tangara_gen::*;
 
 fn main() {
-    Generator::new("MyPackage")
+    /*Generator::new("MyPackage")
         .enable_internal(true)
         .parse_file("src/lib.rs")
         .custom_uses(vec!["crate::*"])
         .generate_to_file("src/bindings.rs")
-        .unwrap();
+        .unwrap();*/
+    PackageGenerator::new("MyPackage", Config::default())
+        .parse_file("src/lib.rs")
+        .generate_to_file("refldata.tg")
+        .expect("Error with writing to bindings.tg");
 
     /*Generator::new("Tangara")
         .parse_file("../tangara/src/lib.rs")

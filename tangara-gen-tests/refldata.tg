@@ -1,0 +1,1 @@
+Package { name: "MyPackage", id: 15027680195549333245, types: [Type { vis: Private, namespace: "MyPackage", name: "MyStruct", id: 15379272505678659642, attrs: [], kind: Class([], [], []) }] }
