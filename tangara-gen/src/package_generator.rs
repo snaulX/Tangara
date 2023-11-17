@@ -4,9 +4,9 @@ use std::path::Path;
 use std::rc::Rc;
 use proc_macro2::Ident;
 use quote::ToTokens;
-use syn::{Item, parse_file, Visibility};
+use syn::{Item, parse_file, ReturnType, TraitItem, Type, Visibility};
 use tangara_highlevel::builder::*;
-use tangara_highlevel::{Package, Visibility as TgVis};
+use tangara_highlevel::{Package, TypeRef, Visibility as TgVis};
 
 pub struct Config {
     pub ctor_names: Vec<String>,
@@ -26,6 +26,66 @@ pub struct PackageGenerator {
     config: Config,
     package_builder: Rc<RefCell<PackageBuilder>>,
     structs: HashMap<String, ClassBuilder>
+}
+
+fn get_visibility(vis: &Visibility) -> TgVis {
+    match vis {
+        Visibility::Public(_) => TgVis::Public,
+        Visibility::Restricted(sub_vis) => {
+            let sub_vis_name = sub_vis.path.to_token_stream().to_string();
+            if sub_vis_name == "super" {
+                TgVis::Protected
+            } else {
+                TgVis::Internal
+            }
+        }
+        Visibility::Inherited => TgVis::Private
+    }
+}
+
+fn get_typeref(t: &Type) -> Option<TypeRef> {
+    match t {
+        Type::Array(_) => None,
+        Type::BareFn(_) => None,
+        Type::Group(_) => None,
+        Type::ImplTrait(_) => None,
+        Type::Macro(_) => None,
+        Type::Never(_) => None,
+        Type::Paren(paren_type) => {
+            get_typeref(&paren_type.elem)
+        },
+        Type::Path(path_type) => {
+            let mut path = String::new();
+            for seg in &path_type.path.segments {
+                path.push_str(&seg.ident.to_string());
+                path.push('.');
+            }
+            path.remove(path.len() - 1); // remove last '.'
+            Some(TypeRef::Name(path))
+        },
+        Type::Ptr(ptr_type) => {
+            // TODO add attribute of mutability if ref_type is mutable
+            // TODO change type from default to Ptr<T>
+            get_typeref(&ptr_type.elem)
+        },
+        Type::Reference(ref_type) => {
+            // TODO add attribute of mutability if ref_type is mutable
+            get_typeref(&ref_type.elem)
+        },
+        Type::Slice(_) => None,
+        Type::TraitObject(_) => None,
+        Type::Tuple(tuple_type) => {
+            let mut types = vec![];
+            for tt in &tuple_type.elems {
+                let ott = get_typeref(tt);
+                if ott.is_some() {
+                    types.push(ott.unwrap());
+                }
+            }
+            Some(TypeRef::Tuple(types))
+        }
+        _ => None
+    }
 }
 
 impl PackageGenerator {
@@ -62,21 +122,49 @@ impl PackageGenerator {
                 self.package_builder.borrow_mut().set_namespace(&prev_ns);
             }
             Item::Struct(struct_item) => {
-                let class_builder = self.get_or_create_struct(&struct_item.ident);
-                class_builder.set_visibility(match &struct_item.vis {
-                    Visibility::Public(_) => TgVis::Public,
-                    Visibility::Restricted(sub_vis) => {
-                        let sub_vis_name = sub_vis.path.to_token_stream().to_string();
-                        if sub_vis_name == "super" {
-                            TgVis::Protected
-                        } else {
-                            TgVis::Internal
-                        }
-                    }
-                    Visibility::Inherited => TgVis::Private
-                });
+                let mut class_builder = self.get_or_create_struct(&struct_item.ident);
+                class_builder.set_visibility(get_visibility(&struct_item.vis));
             }
-            Item::Trait(_) => {}
+            Item::Trait(trait_item) => {
+                let mut interface_builder = create_interface(
+                    self.package_builder.clone(),
+                    &trait_item.ident.to_string() // name
+                );
+                interface_builder.set_visibility(get_visibility(&trait_item.vis));
+                for it in &trait_item.items {
+                    match it {
+                        TraitItem::Const(_) => {}
+                        TraitItem::Fn(fn_item) => {
+                            let mut fn_builder = interface_builder.add_method(&fn_item.sig.ident.to_string());
+
+                            // Parse return type
+                            match &fn_item.sig.output {
+                                ReturnType::Default => {} // return type of fn_builder by default is nothing
+                                ReturnType::Type(_, ret_type) => {
+                                    if let Some(ret_typeref) = get_typeref(ret_type) {
+                                        /*if let TypeRef::Tuple(types) = &ret_typeref {
+                                            if types.len() != 0 {
+                                                fn_builder.return_type(ret_typeref);
+                                            }
+                                        }
+                                        else {*/
+                                            fn_builder.return_type(ret_typeref);
+                                        //}
+                                    }
+                                }
+                            }
+
+                            // Parse arguments
+
+                            fn_builder.build();
+                        }
+                        TraitItem::Type(_) => {}
+                        TraitItem::Macro(_) => {}
+                        _ => {}
+                    }
+                }
+                interface_builder.build();
+            }
             Item::Type(_) => {}
             Item::Union(_) => {}
             _ => {}

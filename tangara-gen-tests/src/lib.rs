@@ -1,6 +1,11 @@
 mod bindings;
 
-struct MyStruct {
+pub trait MyTrait {
+    fn foo(a: &MyStruct);
+    fn bar() -> MyStruct;
+}
+
+pub struct MyStruct {
     name: String
 }
 
