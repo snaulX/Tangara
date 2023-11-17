@@ -16,8 +16,7 @@ quote = { version = "1.0" }
 proc-macro2 = { version = "1.0" }
 syn = { version = "2.0", features = ["full", "extra-traits"] }
 xxhash-rust = { version = "0.8.7", features = ["xxh3", "const_xxh3"] }
-tangara-highlevel = { version = "0.1.0", path = "../tangara-highlevel", optional = true, features = ["serde"] }
+tangara-highlevel = { version = "0.1.0", path = "../tangara-highlevel", features = ["builder"] }
 
 [features]
-default = ["high_level"]
-high_level = ["dep:tangara-highlevel"]
+default = []

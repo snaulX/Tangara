@@ -13,7 +13,8 @@ pub struct ConstructorBuilder<'a, T: ConstructorCollector> {
 }
 
 impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
-    pub(crate) fn new(builder: &'a mut T, vis: Visibility) -> Self {
+    pub(crate) fn new(builder: &'a mut T) -> Self {
+        let vis = builder.get_default_visibility();
         Self {
             builder,
             vis,

@@ -1,4 +1,20 @@
-use tangara_highlevel::Package;
+use std::collections::HashMap;
+use tangara_highlevel::builder::*;
+
+enum Number {
+    Int(i64),
+    UInt(u64),
+    Float(f64)
+}
+
+enum Value {
+    Null,
+    Bool(bool),
+    Number(Number),
+    String(String),
+    Array(Vec<Value>),
+    Object(HashMap<String, Value>),
+}
 
 #[test]
 fn diligent_engine() {
@@ -6,4 +22,6 @@ fn diligent_engine() {
         name: "".to_string(),
         id: 0,
     };*/
+    let alphaengine = PackageBuilder::new("AlphaEngine");
+    let isystem = create_interface(alphaengine.clone(), "ISystem");
 }

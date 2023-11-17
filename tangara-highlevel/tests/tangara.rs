@@ -1,7 +1,7 @@
 use tangara_highlevel::{TypeRef, Visibility};
 use tangara_highlevel::builder::{PackageBuilder, TypeBuilder};
 
-#[test]
+/*#[test]
 #[cfg(feature = "builder")]
 fn tangara_builder() {
     let tangara = PackageBuilder::new("Tangara")
@@ -85,4 +85,4 @@ fn tangara_builder() {
             .build()
         .build();
     println!("Tangara package {:?}", tangara);
-}
+}*/

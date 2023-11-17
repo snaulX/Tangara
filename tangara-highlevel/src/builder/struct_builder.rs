@@ -1,20 +1,22 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
 use crate::{Constructor, Property, Type, TypeRef, Visibility};
 use crate::builder::constructor_builder::{ConstructorBuilder, ConstructorCollector};
 use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
 use crate::TypeKind::Struct;
 
-pub struct StructBuilder<'a> {
-    builder: &'a mut PackageBuilder,
+pub struct StructBuilder {
+    builder: Rc<RefCell<PackageBuilder>>,
     name: String,
     vis: Visibility,
     constructors: Vec<Constructor>,
     properties: Vec<Property>
 }
 
-impl<'a> StructBuilder<'a> {
-    pub(crate) fn new(builder: &'a mut PackageBuilder, name: &str) -> Self {
-        let vis = builder.type_visibility.clone();
+impl StructBuilder {
+    pub(crate) fn new(builder: Rc<RefCell<PackageBuilder>>, name: &str) -> Self {
+        let vis = builder.borrow().type_visibility;
         Self {
             builder,
             name: name.to_string(),
@@ -29,20 +31,20 @@ impl<'a> StructBuilder<'a> {
         self
     }
 
-    pub fn add_constructor(&'a mut self) -> ConstructorBuilder<'a, Self> {
-        ConstructorBuilder::new(self, self.builder.constructor_visibility)
+    pub fn add_constructor(&mut self) -> ConstructorBuilder<Self> {
+        ConstructorBuilder::new(self)
     }
 
-    pub fn add_property(&'a mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<'a, Self> {
+    pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
         PropertyBuilder::new(self, prop_type, name)
     }
 }
 
-impl<'a> TypeBuilder for StructBuilder<'a> {
+impl TypeBuilder for StructBuilder {
     fn get_type(&self) -> Type {
         Type {
             vis: self.vis.clone(),
-            namespace: self.builder.namespace.clone(),
+            namespace: self.builder.borrow().namespace.clone(),
             name: self.name.clone(),
             id: generate_type_id(&self.name),
             attrs: vec![],
@@ -50,15 +52,17 @@ impl<'a> TypeBuilder for StructBuilder<'a> {
         }
     }
 
-    fn build(&mut self) -> &mut PackageBuilder {
-        self.builder.types.push(self.get_type());
-        self.builder
+    fn build(self) -> Type {
+        let result_type = self.get_type();
+        let mut builder = self.builder.borrow_mut();
+        builder.types.push(result_type.clone());
+        result_type
     }
 }
 
-impl<'a> ConstructorCollector for StructBuilder<'a> {
+impl ConstructorCollector for StructBuilder {
     fn get_default_visibility(&self) -> Visibility {
-        self.builder.constructor_visibility
+        self.builder.borrow().constructor_visibility
     }
 
     fn add_constructor(&mut self, constructor: Constructor) {
@@ -66,9 +70,9 @@ impl<'a> ConstructorCollector for StructBuilder<'a> {
     }
 }
 
-impl<'a> PropertyCollector for StructBuilder<'a> {
+impl PropertyCollector for StructBuilder {
     fn get_default_visibility(&self) -> Visibility {
-        self.builder.property_visibility
+        self.builder.borrow().property_visibility
     }
 
     fn add_property(&mut self, property: Property) {

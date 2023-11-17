@@ -1,21 +1,22 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
-use crate::{Constructor, Method, Property, Type, TypeRef, Visibility};
-use crate::builder::constructor_builder::{ConstructorBuilder, ConstructorCollector};
+use crate::{Method, Property, Type, TypeRef, Visibility};
 use crate::builder::method_builder::{MethodBuilder, MethodCollector};
 use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
-use crate::TypeKind::{Class, Interface};
+use crate::TypeKind::Interface;
 
-pub struct InterfaceBuilder<'a> {
-    builder: &'a mut PackageBuilder,
+pub struct InterfaceBuilder {
+    builder: Rc<RefCell<PackageBuilder>>,
     name: String,
     vis: Visibility,
     properties: Vec<Property>,
     methods: Vec<Method>
 }
 
-impl<'a> InterfaceBuilder<'a> {
-    pub(crate) fn new(builder: &'a mut PackageBuilder, name: &str) -> Self {
-        let vis = builder.type_visibility.clone();
+impl InterfaceBuilder {
+    pub fn new(builder: Rc<RefCell<PackageBuilder>>, name: &str) -> Self {
+        let vis = builder.borrow().type_visibility;
         Self {
             builder,
             name: name.to_string(),
@@ -30,20 +31,20 @@ impl<'a> InterfaceBuilder<'a> {
         self
     }
 
-    pub fn add_property(&'a mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<'a, Self> {
+    pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
         PropertyBuilder::new(self, prop_type, name)
     }
 
-    pub fn add_method(&'a mut self, name: &str) -> MethodBuilder<'a, Self> {
+    pub fn add_method(&mut self, name: &str) -> MethodBuilder<Self> {
         MethodBuilder::new(self, name)
     }
 }
 
-impl<'a> TypeBuilder for InterfaceBuilder<'a> {
+impl TypeBuilder for InterfaceBuilder {
     fn get_type(&self) -> Type {
         Type {
             vis: self.vis.clone(),
-            namespace: self.builder.namespace.clone(),
+            namespace: self.builder.borrow().namespace.clone(),
             name: self.name.clone(),
             id: generate_type_id(&self.name),
             attrs: vec![],
@@ -54,13 +55,15 @@ impl<'a> TypeBuilder for InterfaceBuilder<'a> {
         }
     }
 
-    fn build(&mut self) -> &mut PackageBuilder {
-        self.builder.types.push(self.get_type());
-        self.builder
+    fn build(self) -> Type {
+        let result_type = self.get_type();
+        let mut builder = self.builder.borrow_mut();
+        builder.types.push(result_type.clone());
+        result_type
     }
 }
 
-impl<'a> PropertyCollector for InterfaceBuilder<'a> {
+impl PropertyCollector for InterfaceBuilder {
     fn get_default_visibility(&self) -> Visibility {
         Visibility::Public
     }
@@ -74,7 +77,7 @@ impl<'a> PropertyCollector for InterfaceBuilder<'a> {
     }
 }
 
-impl<'a> MethodCollector for InterfaceBuilder<'a> {
+impl MethodCollector for InterfaceBuilder {
     fn get_default_visibility(&self) -> Visibility {
         Visibility::Public
     }

@@ -1,21 +1,23 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::{Package, Type, TypeRef, Visibility};
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
-use crate::builder::alias_builder::TypeAliasBuilder;
-use crate::builder::class_builder::ClassBuilder;
-use crate::builder::enum_builder::EnumBuilder;
-use crate::builder::interface_builder::InterfaceBuilder;
-use crate::builder::struct_builder::StructBuilder;
-use crate::TypeKind::TypeAlias;
 
-pub mod enum_builder;
-pub mod class_builder;
-pub mod struct_builder;
-pub mod interface_builder;
-pub mod alias_builder;
-pub mod constructor_builder;
-pub mod property_builder;
-pub mod method_builder;
+mod enum_builder;
+mod class_builder;
+mod struct_builder;
+mod interface_builder;
+mod alias_builder;
+mod constructor_builder;
+mod property_builder;
+mod method_builder;
+
+pub use crate::builder::alias_builder::TypeAliasBuilder;
+pub use crate::builder::class_builder::ClassBuilder;
+pub use crate::builder::enum_builder::EnumBuilder;
+pub use crate::builder::interface_builder::InterfaceBuilder;
+pub use crate::builder::struct_builder::StructBuilder;
 
 const PACKAGE_SECRET: [u8; 192] = const_custom_default_secret(772);
 const TYPE_SECRET: [u8; 192] = const_custom_default_secret(4900);
@@ -33,7 +35,7 @@ pub(crate) fn generate_member_id(name: &String) -> u64 {
 
 pub trait TypeBuilder {
     fn get_type(&self) -> Type;
-    fn build(&mut self) -> &mut PackageBuilder;
+    fn build(self) -> Type;
 }
 
 pub struct PackageBuilder {
@@ -47,16 +49,22 @@ pub struct PackageBuilder {
 }
 
 impl PackageBuilder {
-    pub fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            namespace: name.to_string(),
-            type_visibility: Visibility::Public,
-            constructor_visibility: Visibility::Public,
-            property_visibility: Visibility::Public,
-            method_visibility: Visibility::Public,
-            types: Vec::new()
-        }
+    pub fn new(name: &str) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(
+            Self {
+                name: name.to_string(),
+                namespace: name.to_string(),
+                type_visibility: Visibility::Public,
+                constructor_visibility: Visibility::Public,
+                property_visibility: Visibility::Public,
+                method_visibility: Visibility::Public,
+                types: Vec::new()
+            }
+        ))
+    }
+
+    pub fn get_name(&self) -> String {
+        self.name.clone()
     }
 
     pub fn set_namespace(&mut self, namespace: &str) -> &mut Self {
@@ -64,31 +72,39 @@ impl PackageBuilder {
         self
     }
 
-    pub fn create_class(&mut self, name: &str) -> ClassBuilder {
-        ClassBuilder::new(self, name)
+    pub fn get_namespace(&self) -> String {
+        self.namespace.clone()
     }
 
-    pub fn create_struct(&mut self, name: &str) -> StructBuilder {
-        StructBuilder::new(self, name)
-    }
-
-    pub fn create_enum(&mut self, name: &str) -> EnumBuilder {
-        EnumBuilder::new(self, name)
-    }
-
-    pub fn create_interface(&mut self, name: &str) -> InterfaceBuilder {
-        InterfaceBuilder::new(self, name)
-    }
-
-    pub fn create_alias(&mut self, name: &str, alias: TypeRef) -> TypeAliasBuilder {
-        TypeAliasBuilder::new(self, name, alias)
+    pub fn get_id(&self) -> u64 {
+        xxh3_64_with_secret(self.name.as_bytes(), &PACKAGE_SECRET)
     }
 
     pub fn build(&self) -> Package {
         Package {
             name: self.name.clone(),
-            id: xxh3_64_with_secret(self.name.as_bytes(), &PACKAGE_SECRET),
+            id: self.get_id(),
             types: self.types.to_vec(),
         }
     }
+}
+
+pub fn create_class(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> ClassBuilder {
+    ClassBuilder::new(pkg_builder, name)
+}
+
+pub fn create_struct(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> StructBuilder {
+    StructBuilder::new(pkg_builder, name)
+}
+
+pub fn create_enum(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> EnumBuilder {
+    EnumBuilder::new(pkg_builder, name)
+}
+
+pub fn create_interface(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> InterfaceBuilder {
+    InterfaceBuilder::new(pkg_builder, name)
+}
+
+pub fn create_alias(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str, alias: TypeRef) -> TypeAliasBuilder {
+    TypeAliasBuilder::new(pkg_builder, name, alias)
 }

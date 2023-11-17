@@ -1,22 +1,26 @@
-use tangara_highlevel::{TypeRef, Visibility};
-use tangara_highlevel::builder::{PackageBuilder, TypeBuilder};
+use tangara_highlevel::{Package, TypeRef, Visibility};
+use tangara_highlevel::builder::*;
 
 #[test]
 #[cfg(feature = "builder")]
 fn alpha_engine() {
     // Create Alpha.Window package
-    let alphawindow = PackageBuilder::new("Alpha.Window")
-        .set_namespace("Alpha.Window")
-        .create_enum("WindowFlags")
-            .bitflags()
+    let alphawindow: Package;
+    {
+        let builder = PackageBuilder::new("Alpha.Window");
+        builder.borrow_mut().set_namespace("Alpha.Window");
+        let mut type_builder = create_enum(builder.clone(), "WindowFlags")
+            .bitflags();
+        type_builder
             .literal("None")
             .literal("Fullscreen")
             .literal("FullscreenDesktop")
             .literal("Borderless")
             .literal("Resizable")
-            .literal("Maximized")
-            .build()
-        .create_class("Window")
+            .literal("Maximized");
+        type_builder.build();
+        let mut type_builder = create_class(builder.clone(), "Window");
+        type_builder
             .set_visibility(Visibility::Public)
             .add_constructor()
                 .set_visibility(Visibility::Public)
@@ -52,19 +56,24 @@ fn alpha_engine() {
                     None,
                     vec![TypeRef::from("Ptr"), TypeRef::from("int"), TypeRef::from("int")]),
                      "callback")
-                .build()
-            .build()
-        .build();
+                .build();
+        type_builder.build();
+        alphawindow = builder.borrow().build();
+    }
     println!("Alpha.Window package: {:?}", alphawindow);
 
     // Create AlphaEngine package
-    let alphaengine = PackageBuilder::new("AlphaEngine")
-        .set_namespace("Alpha.Engine")
-        .create_interface("ISystem")
+    let alphaengine;
+    {
+        let builder = PackageBuilder::new("AlphaEngine");
+        builder.borrow_mut().set_namespace("Alpha.Engine");
+        let mut type_builder = create_interface(builder.clone(), "ISystem");
+        type_builder
             .add_method("Init").build()
             .add_method("Enable").build()
-            .add_method("Disable").build()
-            .build()
-        .build();
+            .add_method("Disable").build();
+        type_builder.build();
+        alphaengine = builder.borrow().build();
+    }
     println!("Alpha Engine package: {:?}", alphaengine);
 }

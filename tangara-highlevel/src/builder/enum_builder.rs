@@ -1,18 +1,20 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
 use crate::{Attribute, Type, TypeRef, Value, Visibility};
 use crate::TypeKind::Enum;
 
-pub struct EnumBuilder<'a> {
-    builder: &'a mut PackageBuilder,
+pub struct EnumBuilder {
+    builder: Rc<RefCell<PackageBuilder>>,
     name: String,
     vis: Visibility,
     literals: HashMap<String, Value>,
 }
 
-impl<'a> EnumBuilder<'a> {
-    pub(crate) fn new(builder: &'a mut PackageBuilder, name: &str) -> Self {
-        let vis = builder.type_visibility;
+impl EnumBuilder {
+    pub fn new(builder: Rc<RefCell<PackageBuilder>>, name: &str) -> Self {
+        let vis = builder.borrow().type_visibility;
         Self {
             builder,
             name: name.to_string(),
@@ -21,7 +23,7 @@ impl<'a> EnumBuilder<'a> {
         }
     }
 
-    pub fn bitflags(mut self) -> BitflagsBuilder<'a> {
+    pub fn bitflags(self) -> BitflagsBuilder {
         BitflagsBuilder {
             builder: self
         }
@@ -36,11 +38,11 @@ impl<'a> EnumBuilder<'a> {
     }
 }
 
-impl<'a> TypeBuilder for EnumBuilder<'a> {
+impl TypeBuilder for EnumBuilder {
     fn get_type(&self) -> Type {
         Type {
             vis: self.vis.clone(),
-            namespace: self.builder.namespace.clone(),
+            namespace: self.builder.borrow().namespace.clone(),
             name: self.name.clone(),
             id: generate_type_id(&self.name),
             attrs: vec![],
@@ -48,19 +50,21 @@ impl<'a> TypeBuilder for EnumBuilder<'a> {
         }
     }
 
-    fn build(&mut self) -> &mut PackageBuilder {
-        self.builder.types.push(self.get_type());
-        self.builder
+    fn build(self) -> Type {
+        let result_type = self.get_type();
+        let mut builder = self.builder.borrow_mut();
+        builder.types.push(result_type.clone());
+        result_type
     }
 }
 
-pub struct BitflagsBuilder<'a> {
-    builder: EnumBuilder<'a>,
+pub struct BitflagsBuilder {
+    builder: EnumBuilder,
 }
 
-impl<'a> BitflagsBuilder<'a> {
+impl BitflagsBuilder {
     pub fn literal(&mut self, literal: &str) -> &mut Self {
-        let literals_count = (self.builder.literals.len() as u32);
+        let literals_count = self.builder.literals.len() as u32;
         let value = if literals_count == 0 {
             0
         } else {
@@ -71,12 +75,12 @@ impl<'a> BitflagsBuilder<'a> {
     }
 }
 
-impl<'a> TypeBuilder for BitflagsBuilder<'a> {
+impl TypeBuilder for BitflagsBuilder {
     fn get_type(&self) -> Type {
         let enum_builder = &self.builder;
         Type {
             vis: enum_builder.vis.clone(),
-            namespace: enum_builder.builder.namespace.clone(),
+            namespace: enum_builder.builder.borrow().namespace.clone(),
             name: enum_builder.name.clone(),
             id: generate_type_id(&enum_builder.name),
             attrs: vec![
@@ -86,8 +90,10 @@ impl<'a> TypeBuilder for BitflagsBuilder<'a> {
         }
     }
 
-    fn build(&mut self) -> &mut PackageBuilder {
-        self.builder.builder.types.push(self.get_type());
-        self.builder.builder
+    fn build(self) -> Type {
+        let result_type = self.get_type();
+        let mut builder = self.builder.builder.borrow_mut();
+        builder.types.push(result_type.clone());
+        result_type
     }
 }
