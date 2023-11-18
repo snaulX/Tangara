@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::path::Path;
 use std::rc::Rc;
 use proc_macro2::Ident;
 use quote::ToTokens;
-use syn::{Item, parse_file, ReturnType, TraitItem, Type, Visibility};
+use syn::{FnArg, Item, parse_file, Pat, ReturnType, TraitItem, Type, Visibility};
 use tangara_highlevel::builder::*;
 use tangara_highlevel::{Package, TypeRef, Visibility as TgVis};
 
@@ -133,9 +134,11 @@ impl PackageGenerator {
                 interface_builder.set_visibility(get_visibility(&trait_item.vis));
                 for it in &trait_item.items {
                     match it {
-                        TraitItem::Const(_) => {}
                         TraitItem::Fn(fn_item) => {
+                            // TODO check on get_ set_ pair functions to generate properties
                             let mut fn_builder = interface_builder.add_method(&fn_item.sig.ident.to_string());
+
+                            // TODO parse generics
 
                             // Parse return type
                             match &fn_item.sig.output {
@@ -155,18 +158,50 @@ impl PackageGenerator {
                             }
 
                             // Parse arguments
+                            let mut have_self = false;
+                            for arg in &fn_item.sig.inputs {
+                                match arg {
+                                    FnArg::Receiver(_) => {
+                                        have_self = true;
+                                    }
+                                    FnArg::Typed(fn_arg) => {
+                                        if let Pat::Ident(arg_ident) = &fn_arg.pat.deref() {
+                                            let arg_name = arg_ident.ident.to_string();
+                                            let arg_type = get_typeref(&fn_arg.ty).expect("Arg type cannot be None");
+                                            if arg_ident.mutability.is_some() {
+                                                fn_builder.arg_ref(arg_type, arg_name.as_str());
+                                            }
+                                            else {
+                                                fn_builder.arg(arg_type, arg_name.as_str());
+                                            }
+                                        }
+                                        else {
+                                            panic!("Trait function arg name is not ident");
+                                        }
+                                    }
+                                }
+                            }
+                            if !have_self {
+                                panic!("Trait (interface) method must have 'self' argument");
+                            }
 
                             fn_builder.build();
                         }
-                        TraitItem::Type(_) => {}
-                        TraitItem::Macro(_) => {}
+                        TraitItem::Type(_) => {} // TODO add checks in typeref making in function (return or args) on this type
                         _ => {}
                     }
                 }
                 interface_builder.build();
             }
-            Item::Type(_) => {}
-            Item::Union(_) => {}
+            Item::Type(type_item) => {
+                let mut alias_builder = create_alias(
+                    self.package_builder.clone(),
+                    &type_item.ident.to_string(),
+                    get_typeref(&type_item.ty).expect("Type in alias cannot be None")
+                );
+                alias_builder.set_visibility(get_visibility(&type_item.vis));
+                alias_builder.build();
+            }
             _ => {}
         }
     }

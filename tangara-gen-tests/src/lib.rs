@@ -1,13 +1,15 @@
 mod bindings;
 
 pub trait MyTrait {
-    fn foo(a: &MyStruct);
-    fn bar() -> MyStruct;
+    fn foo(&mut self, a: &MyStruct);
+    fn bar(&self) -> MyStruct;
 }
 
 pub struct MyStruct {
     name: String
 }
+
+pub(crate) type BoxedStr = Box<str>;
 
 impl MyStruct {
     pub(crate) fn new() -> Self {
