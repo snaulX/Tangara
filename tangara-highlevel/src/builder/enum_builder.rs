@@ -47,12 +47,19 @@ impl TypeBuilder for EnumBuilder {
     }
 
     fn get_type(&self) -> Type {
+        let namespace = self.builder.borrow().namespace.clone();
+        let name = self.name.clone();
+        let mut full_name = String::with_capacity(namespace.len() + name.len() + 1);
+        full_name.push_str(&namespace);
+        full_name.push('.');
+        full_name.push_str(&name);
+        let id = generate_type_id(&full_name);
         Type {
             attrs: self.attrs.to_vec(),
             vis: self.vis.clone(),
-            namespace: self.builder.borrow().namespace.clone(),
-            name: self.name.clone(),
-            id: generate_type_id(&self.name),
+            namespace,
+            name,
+            id,
             kind: Enum(self.literals.clone())
         }
     }
@@ -92,12 +99,19 @@ impl TypeBuilder for BitflagsBuilder {
         let enum_builder = &self.builder;
         let mut attrs = self.builder.attrs.to_vec();
         attrs.push(Attribute(TypeRef::Name("Tangara.Flags".to_string()), vec![]));
+        let namespace = enum_builder.builder.borrow().namespace.clone();
+        let name = enum_builder.name.clone();
+        let mut full_name = String::with_capacity(namespace.len() + name.len() + 1);
+        full_name.push_str(&namespace);
+        full_name.push('.');
+        full_name.push_str(&name);
+        let id = generate_type_id(&full_name);
         Type {
             attrs,
             vis: enum_builder.vis.clone(),
-            namespace: enum_builder.builder.borrow().namespace.clone(),
-            name: enum_builder.name.clone(),
-            id: generate_type_id(&enum_builder.name),
+            namespace,
+            name,
+            id,
             kind: Enum(enum_builder.literals.clone())
         }
     }

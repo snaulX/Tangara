@@ -175,18 +175,14 @@ impl PackageGenerator {
                 if let Some((_, type_name, _)) = &impl_item.trait_ {
                     for_name = Some(type_name.to_token_stream().to_string());
                 }
-                if let TypeRef::Name(impl_name) = get_typeref(&impl_item.self_ty)
+                if let TypeRef::Name(type_name) = get_typeref(&impl_item.self_ty)
                     .expect("Type in 'impl' cannot be None") {
                     let ctor_names = self.config.ctor_names.to_vec();
                     let dont_inherit_traits = self.config.dont_inherit_traits.to_vec();
 
-                    // NOTE: Maybe I need to remove these .clone() everywhere...
-                    // Check what name we should use: 'impl Bruh for T' or 'impl T' where T is name
-                    let type_name = for_name.clone().unwrap_or(impl_name.clone());
                     let mut cb = self.get_or_create_struct(type_name.clone());
-                    if for_name.is_some() {
+                    if let Some(trait_name) = for_name {
                         // Again, if impl is with trait, then we need to inherit class from it
-                        let trait_name = impl_name.clone();
                         // But if really needs to. Because some traits is not important to inherit from.
                         if !dont_inherit_traits.contains(&trait_name) {
                             cb.inherits(TypeRef::Name(trait_name));

@@ -1,4 +1,4 @@
-use crate::builder::generate_member_id;
+use crate::builder::generate_method_id;
 use crate::{Argument, ArgumentKind, Attribute, Method, TypeRef, Value, Visibility};
 
 pub trait MethodCollector {
@@ -90,7 +90,7 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
             attrs: self.attrs.to_vec(),
             vis: self.vis,
             name: self.name.clone(),
-            id: generate_member_id(&self.name),
+            id: generate_method_id(&self.name, &self.args),
             args: self.args.to_vec(),
             return_type: self.return_type.clone(),
         }

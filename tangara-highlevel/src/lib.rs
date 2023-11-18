@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::collections::HashMap;
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
@@ -150,6 +152,16 @@ impl From<u64> for Value {
     }
 }
 
+impl From<usize> for Value {
+    fn from(value: usize) -> Self {
+        if usize::BITS == 32 {
+            Value::UInt(value as u32)
+        } else {
+            Value::ULong(value as u64)
+        }
+    }
+}
+
 impl From<String> for Value {
     fn from(value: String) -> Self {
         Value::String(value)
@@ -182,6 +194,9 @@ pub struct Package {
     pub types: Vec<Type>
 }
 
+// TODO add operator overloading (including explicit/implicit convertation)
+// TODO add generics
+// TODO add abstract, static classes
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Type {
@@ -201,6 +216,7 @@ pub struct Constructor {
     pub args: Vec<Argument>
 }
 
+// TODO add "init" - setter only in constructor
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Property {
@@ -212,6 +228,7 @@ pub struct Property {
     pub id: u64
 }
 
+// TODO add static, abstract, virtual methods
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Method {

@@ -1,8 +1,8 @@
 mod bindings;
 
 pub trait MyTrait {
-    fn foo(&mut self, a: &MyStruct);
-    fn bar(&self) -> MyStruct;
+    fn foo(&mut self, a: String);
+    fn bar(&self) -> String;
 }
 
 pub struct TestStruct {
@@ -14,6 +14,16 @@ pub struct MyStruct {
 }
 
 pub(crate) type BoxedStr = Box<str>;
+
+impl MyTrait for MyStruct {
+    fn foo(&mut self, a: String) {
+        self.name = a;
+    }
+
+    fn bar(&self) -> String {
+        self.name.clone()
+    }
+}
 
 impl MyStruct {
     pub(crate) fn new() -> Self {

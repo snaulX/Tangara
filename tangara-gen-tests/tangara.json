@@ -1,0 +1,487 @@
+{
+  "attrs": [
+    [
+      {
+        "Name": "Tangara.Metadata.Lang"
+      },
+      [
+        {
+          "String": "Rust"
+        }
+      ]
+    ]
+  ],
+  "name": "Tangara",
+  "id": 4243534419063804238,
+  "types": [
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "Ptr",
+      "id": 4547342381831130650,
+      "kind": {
+        "TypeAlias": {
+          "Name": "u8"
+        }
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "FnDtor",
+      "id": 3639611440383007818,
+      "kind": {
+        "TypeAlias": {
+          "Fn": [
+            null,
+            [
+              {
+                "Name": "Ptr"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "Fn",
+      "id": 11862866527991483242,
+      "kind": {
+        "TypeAlias": {
+          "Fn": [
+            {
+              "Name": "Ptr"
+            },
+            [
+              {
+                "Name": "usize"
+              },
+              {
+                "Name": "u8"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "Runtime",
+      "id": 4288140446718285857,
+      "kind": {
+        "Class": [
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Public",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "use_context",
+              "id": 10327001465945502749,
+              "args": [],
+              "return_type": {
+                "Name": "Context"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "Property",
+      "id": 14442440088244735772,
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Fn": [
+                  {
+                    "Name": "Ptr"
+                  },
+                  [
+                    {
+                      "Name": "Ptr"
+                    }
+                  ]
+                ]
+              },
+              "name": "getter",
+              "id": 18278891177158225869
+            },
+            {
+              "attrs": [],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Name": "Option"
+              },
+              "name": "setter",
+              "id": 9297565244898655042
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "FuncTable",
+      "id": 13315287748342839472,
+      "kind": {
+        "Class": [
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Internal",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "set_dtor",
+              "id": 11604634607367361347,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "FnDtor"
+                  },
+                  "dtor",
+                  "Default"
+                ]
+              ],
+              "return_type": null
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_dtor",
+              "id": 3994184886800012150,
+              "args": [],
+              "return_type": {
+                "Name": "FnDtor"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "add_ctor",
+              "id": 11066794207202857611,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "Fn"
+                  },
+                  "ctor",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "usize"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_ctor",
+              "id": 11637125018351471090,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "usize"
+                  },
+                  "index",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "Fn"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "add_method",
+              "id": 13496522486668445248,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ],
+                [
+                  [],
+                  {
+                    "Name": "Fn"
+                  },
+                  "func",
+                  "Default"
+                ]
+              ],
+              "return_type": null
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_method",
+              "id": 13559547909003854106,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "Fn"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "add_property",
+              "id": 582938116017642637,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ],
+                [
+                  [],
+                  {
+                    "Name": "Property"
+                  },
+                  "property",
+                  "Default"
+                ]
+              ],
+              "return_type": null
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_property",
+              "id": 17404667819105087630,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "Property"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "TypeTable",
+      "id": 15805489126155215399,
+      "kind": {
+        "Class": [
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Internal",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "add_type",
+              "id": 9515708672011284147,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "FuncTable"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_type",
+              "id": 7569306663432790416,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "FuncTable"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "Context",
+      "id": 12490447094366545338,
+      "kind": {
+        "Class": [
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Internal",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "add_package",
+              "id": 12359109620120953044,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "TypeTable"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_package",
+              "id": 78053248962896222,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "TypeTable"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    }
+  ]
+}

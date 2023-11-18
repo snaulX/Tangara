@@ -49,12 +49,19 @@ impl TypeBuilder for StructBuilder {
     }
 
     fn get_type(&self) -> Type {
+        let namespace = self.builder.borrow().namespace.clone();
+        let name = self.name.clone();
+        let mut full_name = String::with_capacity(namespace.len() + name.len() + 1);
+        full_name.push_str(&namespace);
+        full_name.push('.');
+        full_name.push_str(&name);
+        let id = generate_type_id(&full_name);
         Type {
             attrs: self.attrs.to_vec(),
             vis: self.vis.clone(),
-            namespace: self.builder.borrow().namespace.clone(),
-            name: self.name.clone(),
-            id: generate_type_id(&self.name),
+            namespace,
+            name,
+            id,
             kind: Struct(self.constructors.to_vec(), self.properties.to_vec())
         }
     }

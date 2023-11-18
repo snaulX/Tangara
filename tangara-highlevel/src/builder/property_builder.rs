@@ -1,4 +1,4 @@
-use crate::builder::generate_member_id;
+use crate::builder::generate_property_id;
 use crate::{Attribute, Property, TypeRef, Visibility};
 
 pub trait PropertyCollector {
@@ -52,7 +52,7 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
             setter_visibility: self.setter_visibility,
             prop_type: self.prop_type.clone(),
             name: self.name.clone(),
-            id: generate_member_id(&self.name)
+            id: generate_property_id(&self.name)
         }
     }
 

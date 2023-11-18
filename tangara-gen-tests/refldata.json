@@ -19,7 +19,7 @@
       "vis": "Public",
       "namespace": "MyPackage",
       "name": "MyTrait",
-      "id": 18313965336331865945,
+      "id": 16396140555736685195,
       "kind": {
         "Interface": [
           [],
@@ -28,12 +28,12 @@
               "attrs": [],
               "vis": "Public",
               "name": "foo",
-              "id": 15402790705422268107,
+              "id": 13574490469189226774,
               "args": [
                 [
                   [],
                   {
-                    "Name": "MyStruct"
+                    "Name": "String"
                   },
                   "a",
                   "Default"
@@ -48,7 +48,7 @@
               "id": 10297498164471647047,
               "args": [],
               "return_type": {
-                "Name": "MyStruct"
+                "Name": "String"
               }
             }
           ],
@@ -61,7 +61,7 @@
       "vis": "Internal",
       "namespace": "MyPackage",
       "name": "BoxedStr",
-      "id": 15416413270037981922,
+      "id": 12780686785942148536,
       "kind": {
         "TypeAlias": {
           "Name": "Box"
@@ -72,32 +72,8 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "MyPackage",
-      "name": "TestStruct",
-      "id": 8940967316471192313,
-      "kind": {
-        "Struct": [
-          [],
-          [
-            {
-              "attrs": [],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Name": "u64"
-              },
-              "name": "id",
-              "id": 5824848936401749885
-            }
-          ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
       "name": "MyStruct",
-      "id": 15379272505678659642,
+      "id": 7534407210518214439,
       "kind": {
         "Class": [
           [
@@ -122,9 +98,36 @@
           [
             {
               "attrs": [],
+              "vis": "Private",
+              "name": "foo",
+              "id": 13574490469189226774,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "String"
+                  },
+                  "a",
+                  "Default"
+                ]
+              ],
+              "return_type": null
+            },
+            {
+              "attrs": [],
+              "vis": "Private",
+              "name": "bar",
+              "id": 10297498164471647047,
+              "args": [],
+              "return_type": {
+                "Name": "String"
+              }
+            },
+            {
+              "attrs": [],
               "vis": "Internal",
               "name": "repeat_name",
-              "id": 981542725215339014,
+              "id": 17567713076779176127,
               "args": [
                 [
                   [],
@@ -143,7 +146,7 @@
               "attrs": [],
               "vis": "Internal",
               "name": "set_name",
-              "id": 16729151800119947090,
+              "id": 1641961565049420977,
               "args": [
                 [
                   [],
@@ -167,7 +170,35 @@
               }
             }
           ],
-          []
+          [
+            {
+              "Name": "MyTrait"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "TestStruct",
+      "id": 16038391058121417372,
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Name": "u64"
+              },
+              "name": "id",
+              "id": 5824848936401749885
+            }
+          ]
         ]
       }
     }
