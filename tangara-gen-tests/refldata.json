@@ -1,0 +1,175 @@
+{
+  "attrs": [
+    [
+      {
+        "Name": "Tangara.Metadata.Lang"
+      },
+      [
+        {
+          "String": "Rust"
+        }
+      ]
+    ]
+  ],
+  "name": "MyPackage",
+  "id": 15027680195549333245,
+  "types": [
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "MyTrait",
+      "id": 18313965336331865945,
+      "kind": {
+        "Interface": [
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "foo",
+              "id": 15402790705422268107,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "MyStruct"
+                  },
+                  "a",
+                  "Default"
+                ]
+              ],
+              "return_type": null
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "bar",
+              "id": 10297498164471647047,
+              "args": [],
+              "return_type": {
+                "Name": "MyStruct"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Internal",
+      "namespace": "MyPackage",
+      "name": "BoxedStr",
+      "id": 15416413270037981922,
+      "kind": {
+        "TypeAlias": {
+          "Name": "Box"
+        }
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "TestStruct",
+      "id": 8940967316471192313,
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Name": "u64"
+              },
+              "name": "id",
+              "id": 5824848936401749885
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "MyStruct",
+      "id": 15379272505678659642,
+      "kind": {
+        "Class": [
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Internal",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Internal",
+              "name": "repeat_name",
+              "id": 981542725215339014,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u32"
+                  },
+                  "times",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Tuple": []
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Internal",
+              "name": "set_name",
+              "id": 16729151800119947090,
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "str"
+                  },
+                  "name",
+                  "Default"
+                ]
+              ],
+              "return_type": null
+            },
+            {
+              "attrs": [],
+              "vis": "Internal",
+              "name": "get_name",
+              "id": 552281434682100053,
+              "args": [],
+              "return_type": {
+                "Name": "str"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    }
+  ]
+}

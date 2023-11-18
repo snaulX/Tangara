@@ -7,10 +7,12 @@ fn main() {
         .custom_uses(vec!["crate::*"])
         .generate_to_file("src/bindings.rs")
         .unwrap();*/
-    PackageGenerator::new("MyPackage", Config::default())
+
+    let pkg = PackageGenerator::new("MyPackage", Config::default())
         .parse_file("src/lib.rs")
-        .generate_to_file("refldata.tg")
-        .expect("Error with writing to bindings.tg");
+        .generate();
+    let pkg_json = serde_json::to_string_pretty(&pkg).expect("Convert tangara package to json");
+    std::fs::write("refldata.json", pkg_json).expect("Error with writing to refldata.json");
 
     /*Generator::new("Tangara")
         .parse_file("../tangara/src/lib.rs")

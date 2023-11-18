@@ -418,8 +418,4 @@ impl PackageGenerator {
         builder.add_attribute(Attribute(TypeRef::from("Tangara.Metadata.Lang"), vec![Value::from("Rust")]));
         builder.build()
     }
-
-    pub fn generate_to_file<P: AsRef<Path>>(self, path: P) -> std::io::Result<()> {
-        std::fs::write(path, format!("{:?}", self.generate()))
-    }
 }

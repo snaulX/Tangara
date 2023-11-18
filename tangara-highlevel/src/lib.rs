@@ -6,6 +6,7 @@ use serde::{Serialize, Deserialize};
 pub mod builder;
 
 // Enums block
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Visibility {
     Private,
@@ -14,6 +15,7 @@ pub enum Visibility {
     Internal
 }
 
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub enum ArgumentKind {
     Default,
@@ -22,6 +24,7 @@ pub enum ArgumentKind {
     Ref
 }
 
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub enum TypeKind {
     Class(Vec<Constructor>, Vec<Property>, Vec<Method>, Vec<TypeRef>),
@@ -32,6 +35,7 @@ pub enum TypeKind {
 }
 
 // TypeRef block
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub enum TypeRef {
     Name(String),
@@ -67,6 +71,7 @@ impl From<Type> for TypeRef {
 }
 
 // Value block
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub enum Value {
     Null,
@@ -158,15 +163,17 @@ impl From<&str> for Value {
 }
 
 // Structs block
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Argument(pub Vec<Attribute>, pub TypeRef, pub String, pub ArgumentKind);
 
 /// Metadata for reflection's member (such as package, type, it's member and etc.)
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Attribute(pub TypeRef, pub Vec<Value>);
 
-//#[derive(Serialize, Deserialize)]
 // TODO add coding conventions field (naming conventions)
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Package {
     pub attrs: Vec<Attribute>,
@@ -175,6 +182,7 @@ pub struct Package {
     pub types: Vec<Type>
 }
 
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Type {
     pub attrs: Vec<Attribute>,
@@ -185,6 +193,7 @@ pub struct Type {
     pub kind: TypeKind
 }
 
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Constructor {
     pub attrs: Vec<Attribute>,
@@ -192,6 +201,7 @@ pub struct Constructor {
     pub args: Vec<Argument>
 }
 
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Property {
     pub attrs: Vec<Attribute>,
@@ -202,6 +212,7 @@ pub struct Property {
     pub id: u64
 }
 
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Method {
     pub attrs: Vec<Attribute>,

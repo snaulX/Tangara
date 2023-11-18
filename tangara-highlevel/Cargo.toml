@@ -17,5 +17,4 @@ xxhash-rust = { version = "0.8.7", optional = true, features = ["xxh3", "const_x
 
 [features]
 default = []
-serde = ["dep:serde"]
 builder = ["dep:xxhash-rust"]
