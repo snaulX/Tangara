@@ -6,18 +6,33 @@ use std::rc::Rc;
 use quote::ToTokens;
 use syn::*;
 use tangara_highlevel::builder::*;
-use tangara_highlevel::{Attribute, Package, TypeRef, Value, Visibility as TgVis};
+use tangara_highlevel::{Attribute, Package, TypeKind, TypeRef, Value, Visibility as TgVis};
 
 pub struct Config {
+    /// Names of traits which we **don't** need inherit from
+    ///
+    /// Default: `"Default", "From"`
+    pub dont_inherit_traits: Vec<String>,
+    /// Function names that implemented as constructors.
+    ///
+    /// For example: if we have there name `new`, `MyStruct::new(args)` will added to type as constructor.
+    /// Default: `"new"`
     pub ctor_names: Vec<String>,
-    pub generate_pub_fields: bool
+    /// Generate properties from public fields
+    /// Default: `true`
+    pub generate_pub_fields: bool,
+    /// Generate properties from get_, set_ pair methods
+    /// Default: `true`
+    pub generate_properties: bool
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
+            dont_inherit_traits: vec!["Default".to_string(), "From".to_string()],
             ctor_names: vec!["new".to_string()],
-            generate_pub_fields: true
+            generate_pub_fields: true,
+            generate_properties: true
         }
     }
 }
@@ -45,8 +60,29 @@ fn get_visibility(vis: &Visibility) -> TgVis {
 
 fn get_typeref(t: &Type) -> Option<TypeRef> {
     match t {
-        Type::Array(_) => None,
-        Type::BareFn(_) => None,
+        Type::Array(_) => Some(TypeRef::from("Array")),
+        Type::BareFn(fn_type) => {
+            // Parse return type
+            let return_type = match &fn_type.output {
+                ReturnType::Default => None,
+                ReturnType::Type(_, ret_type) => {
+                    if let Some(ret_typeref) = get_typeref(ret_type) {
+                        Some(Box::new(ret_typeref))
+                    }
+                    else {
+                        None
+                    }
+                }
+            };
+
+            // Parse arguments
+            let mut args = vec![];
+            for input in &fn_type.inputs {
+                args.push(get_typeref(&input.ty).expect("Argument type cannot be None"));
+            }
+
+            Some(TypeRef::Fn(return_type, args))
+        },
         Type::Group(_) => None,
         Type::ImplTrait(_) => None,
         Type::Macro(_) => None,
@@ -72,7 +108,7 @@ fn get_typeref(t: &Type) -> Option<TypeRef> {
             // TODO add attribute of mutability if ref_type is mutable
             get_typeref(&ref_type.elem)
         },
-        Type::Slice(_) => None,
+        Type::Slice(_) => Some(TypeRef::from("Array")),
         Type::TraitObject(_) => None,
         Type::Tuple(tuple_type) => {
             let mut types = vec![];
@@ -130,11 +166,32 @@ impl PackageGenerator {
 
     fn parse_item(&mut self, item: &Item) {
         match item {
-            Item::Enum(_) => {}
+            Item::Enum(_) => {
+                // TODO implement
+            }
             Item::Impl(impl_item) => {
-                // TODO make inheritance of trait on high-level
-                if let TypeRef::Name(type_name) = get_typeref(&impl_item.self_ty)
+                let mut for_name = None;
+                // Check situation on 'impl Trait for Struct'
+                if let Some((_, type_name, _)) = &impl_item.trait_ {
+                    for_name = Some(type_name.to_token_stream().to_string());
+                }
+                if let TypeRef::Name(impl_name) = get_typeref(&impl_item.self_ty)
                     .expect("Type in 'impl' cannot be None") {
+                    let ctor_names = self.config.ctor_names.to_vec();
+                    let dont_inherit_traits = self.config.dont_inherit_traits.to_vec();
+
+                    // NOTE: Maybe I need to remove these .clone() everywhere...
+                    // Check what name we should use: 'impl Bruh for T' or 'impl T' where T is name
+                    let type_name = for_name.clone().unwrap_or(impl_name.clone());
+                    let mut cb = self.get_or_create_struct(type_name.clone());
+                    if for_name.is_some() {
+                        // Again, if impl is with trait, then we need to inherit class from it
+                        let trait_name = impl_name.clone();
+                        // But if really needs to. Because some traits is not important to inherit from.
+                        if !dont_inherit_traits.contains(&trait_name) {
+                            cb.inherits(TypeRef::Name(trait_name));
+                        }
+                    }
                     for item_impl in &impl_item.items {
                         match item_impl {
                             ImplItem::Fn(fn_item) => {
@@ -142,14 +199,13 @@ impl PackageGenerator {
                                 let fn_sig = &fn_item.sig;
                                 let name = fn_sig.ident.to_string();
                                 // Check on constructor name
-                                if self.config.ctor_names.contains(&name) {
+                                if ctor_names.contains(&name) {
                                     // Make constructor
-                                    let mut ctor_builder = self.get_or_create_struct(type_name.clone())
-                                        .add_constructor();
+                                    let mut ctor_builder = cb.add_constructor();
                                     ctor_builder.set_visibility(get_visibility(&fn_item.vis));
                                     // Add attribute: name of 'fn' associated to this constructor
                                     ctor_builder.add_attribute(Attribute(
-                                        TypeRef::from("Tangara.Rust.ConstructorFnName"),
+                                        TypeRef::from("Tangara.Rust.Metadata.ConstructorFnName"),
                                         vec![Value::String(name.clone())]
                                     ));
 
@@ -201,8 +257,7 @@ impl PackageGenerator {
                                 }
                                 else {
                                     // Make function
-                                    let mut fn_builder = self.get_or_create_struct(type_name.clone())
-                                        .add_method(&name);
+                                    let mut fn_builder = cb.add_method(&name);
                                     fn_builder.set_visibility(get_visibility(&fn_item.vis));
 
                                     // TODO parse generics
@@ -252,8 +307,25 @@ impl PackageGenerator {
                 self.package_builder.borrow_mut().set_namespace(&prev_ns);
             }
             Item::Struct(struct_item) => {
+                let generate_pub_fields = self.config.generate_pub_fields;
                 let mut class_builder = self.get_or_create_struct(struct_item.ident.to_string());
                 class_builder.set_visibility(get_visibility(&struct_item.vis));
+
+                if generate_pub_fields {
+                    for field in &struct_item.fields {
+                        if let Visibility::Public(_) = field.vis {
+                            if let Some(field_ident) = &field.ident {
+                                let mut prop_builder = class_builder.add_property(
+                                    get_typeref(&field.ty).expect("Field cannot have type None"),
+                                    &field_ident.to_string()
+                                );
+                                prop_builder.getter_visibility(TgVis::Public);
+                                prop_builder.setter_visibility(TgVis::Public);
+                                prop_builder.build();
+                            }
+                        }
+                    }
+                }
             }
             Item::Trait(trait_item) => {
                 let mut interface_builder = create_interface(
@@ -326,10 +398,24 @@ impl PackageGenerator {
 
     pub fn generate(self) -> Package {
         for (_, cb) in self.structs {
-            cb.build();
+            let result = cb.get_type();
+            if let TypeKind::Class(ctors, props, methods, parents) = &result.kind {
+                let mut builder = self.package_builder.borrow_mut();
+                builder.add_type(
+                    // Change type's kind on Struct if it's possible
+                    if methods.len() == 0 && parents.len() == 0 {
+                        let mut result = result.clone();
+                        result.kind = TypeKind::Struct(ctors.to_vec(), props.to_vec());
+                        result
+                    }
+                    else {
+                        result.clone()
+                    }
+                );
+            }
         }
         let mut builder = self.package_builder.borrow_mut();
-        builder.add_attribute(Attribute(TypeRef::from("Tangara.Lang"), vec![Value::from("Rust")]));
+        builder.add_attribute(Attribute(TypeRef::from("Tangara.Metadata.Lang"), vec![Value::from("Rust")]));
         builder.build()
     }
 

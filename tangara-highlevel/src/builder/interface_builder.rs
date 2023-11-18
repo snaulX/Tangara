@@ -12,7 +12,8 @@ pub struct InterfaceBuilder {
     name: String,
     vis: Visibility,
     properties: Vec<Property>,
-    methods: Vec<Method>
+    methods: Vec<Method>,
+    parents: Vec<TypeRef>
 }
 
 impl InterfaceBuilder {
@@ -23,9 +24,15 @@ impl InterfaceBuilder {
             attrs: vec![],
             name: name.to_string(),
             vis,
-            properties: Vec::new(),
-            methods: Vec::new()
+            properties: vec![],
+            methods: vec![],
+            parents: vec![]
         }
+    }
+
+    pub fn inherits(&mut self, parent: TypeRef) -> &mut Self {
+        self.parents.push(parent);
+        self
     }
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
@@ -57,7 +64,8 @@ impl TypeBuilder for InterfaceBuilder {
             id: generate_type_id(&self.name),
             kind: Interface(
                 self.properties.to_vec(),
-                self.methods.to_vec()
+                self.methods.to_vec(),
+                self.parents.to_vec()
             )
         }
     }

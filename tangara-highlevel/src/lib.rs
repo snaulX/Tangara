@@ -24,9 +24,9 @@ pub enum ArgumentKind {
 
 #[derive(Debug, Clone)]
 pub enum TypeKind {
-    Class(Vec<Constructor>, Vec<Property>, Vec<Method>),
+    Class(Vec<Constructor>, Vec<Property>, Vec<Method>, Vec<TypeRef>),
     Enum(HashMap<String, Value>),
-    Interface(Vec<Property>, Vec<Method>),
+    Interface(Vec<Property>, Vec<Method>, Vec<TypeRef>),
     Struct(Vec<Constructor>, Vec<Property>),
     TypeAlias(Box<TypeRef>)
 }
@@ -166,6 +166,7 @@ pub struct Argument(pub Vec<Attribute>, pub TypeRef, pub String, pub ArgumentKin
 pub struct Attribute(pub TypeRef, pub Vec<Value>);
 
 //#[derive(Serialize, Deserialize)]
+// TODO add coding conventions field (naming conventions)
 #[derive(Debug, Clone)]
 pub struct Package {
     pub attrs: Vec<Attribute>,

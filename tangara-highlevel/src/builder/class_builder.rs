@@ -14,7 +14,8 @@ pub struct ClassBuilder {
     vis: Visibility,
     constructors: Vec<Constructor>,
     properties: Vec<Property>,
-    methods: Vec<Method>
+    methods: Vec<Method>,
+    parents: Vec<TypeRef>
 }
 
 impl ClassBuilder {
@@ -25,10 +26,16 @@ impl ClassBuilder {
             attrs: vec![],
             name: name.to_string(),
             vis,
-            constructors: Vec::new(),
-            properties: Vec::new(),
-            methods: Vec::new()
+            constructors: vec![],
+            properties: vec![],
+            methods: vec![],
+            parents: vec![]
         }
+    }
+
+    pub fn inherits(&mut self, parent: TypeRef) -> &mut Self {
+        self.parents.push(parent);
+        self
     }
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
@@ -65,7 +72,8 @@ impl TypeBuilder for ClassBuilder {
             kind: Class(
                 self.constructors.to_vec(),
                 self.properties.to_vec(),
-                self.methods.to_vec()
+                self.methods.to_vec(),
+                self.parents.to_vec()
             )
         }
     }
@@ -73,7 +81,7 @@ impl TypeBuilder for ClassBuilder {
     fn build(self) -> Type {
         let result_type = self.get_type();
         let mut builder = self.builder.borrow_mut();
-        builder.types.push(result_type.clone());
+        builder.add_type(result_type.clone());
         result_type
     }
 }

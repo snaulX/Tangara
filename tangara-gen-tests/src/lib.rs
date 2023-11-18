@@ -5,6 +5,10 @@ pub trait MyTrait {
     fn bar(&self) -> MyStruct;
 }
 
+pub struct TestStruct {
+    pub id: u64
+}
+
 pub struct MyStruct {
     name: String
 }
@@ -19,7 +23,7 @@ impl MyStruct {
     }
 
     pub(crate) fn repeat_name(&self, times: u32) -> () {
-        for i in 0..times {
+        for _ in 0..times {
             println!("My name is {}", self.name);
         }
     }

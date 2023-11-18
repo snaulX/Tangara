@@ -91,6 +91,11 @@ impl PackageBuilder {
         self
     }
 
+    pub fn add_type(&mut self, t: Type) -> &mut Self {
+        self.types.push(t);
+        self
+    }
+
     pub fn build(&self) -> Package {
         Package {
             attrs: self.attrs.to_vec(),

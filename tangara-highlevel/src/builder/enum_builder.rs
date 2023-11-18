@@ -60,7 +60,7 @@ impl TypeBuilder for EnumBuilder {
     fn build(self) -> Type {
         let result_type = self.get_type();
         let mut builder = self.builder.borrow_mut();
-        builder.types.push(result_type.clone());
+        builder.add_type(result_type.clone());
         result_type
     }
 }
@@ -105,7 +105,7 @@ impl TypeBuilder for BitflagsBuilder {
     fn build(self) -> Type {
         let result_type = self.get_type();
         let mut builder = self.builder.builder.borrow_mut();
-        builder.types.push(result_type.clone());
+        builder.add_type(result_type.clone());
         result_type
     }
 }
