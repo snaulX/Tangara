@@ -1,13 +1,14 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
-use crate::{Method, Property, Type, TypeRef, Visibility};
+use crate::{Attribute, Method, Property, Type, TypeRef, Visibility};
 use crate::builder::method_builder::{MethodBuilder, MethodCollector};
 use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
 use crate::TypeKind::Interface;
 
 pub struct InterfaceBuilder {
     builder: Rc<RefCell<PackageBuilder>>,
+    attrs: Vec<Attribute>,
     name: String,
     vis: Visibility,
     properties: Vec<Property>,
@@ -19,6 +20,7 @@ impl InterfaceBuilder {
         let vis = builder.borrow().type_visibility;
         Self {
             builder,
+            attrs: vec![],
             name: name.to_string(),
             vis,
             properties: Vec::new(),
@@ -41,13 +43,18 @@ impl InterfaceBuilder {
 }
 
 impl TypeBuilder for InterfaceBuilder {
+    fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
+    }
+
     fn get_type(&self) -> Type {
         Type {
+            attrs: self.attrs.to_vec(),
             vis: self.vis.clone(),
             namespace: self.builder.borrow().namespace.clone(),
             name: self.name.clone(),
             id: generate_type_id(&self.name),
-            attrs: vec![],
             kind: Interface(
                 self.properties.to_vec(),
                 self.methods.to_vec()

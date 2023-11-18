@@ -7,6 +7,7 @@ use crate::TypeKind::Enum;
 
 pub struct EnumBuilder {
     builder: Rc<RefCell<PackageBuilder>>,
+    attrs: Vec<Attribute>,
     name: String,
     vis: Visibility,
     literals: HashMap<String, Value>,
@@ -16,6 +17,7 @@ impl EnumBuilder {
     pub fn new(builder: Rc<RefCell<PackageBuilder>>, name: &str) -> Self {
         let vis = builder.borrow().type_visibility;
         Self {
+            attrs: vec![],
             builder,
             name: name.to_string(),
             vis,
@@ -39,13 +41,18 @@ impl EnumBuilder {
 }
 
 impl TypeBuilder for EnumBuilder {
+    fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
+    }
+
     fn get_type(&self) -> Type {
         Type {
+            attrs: self.attrs.to_vec(),
             vis: self.vis.clone(),
             namespace: self.builder.borrow().namespace.clone(),
             name: self.name.clone(),
             id: generate_type_id(&self.name),
-            attrs: vec![],
             kind: Enum(self.literals.clone())
         }
     }
@@ -76,16 +83,21 @@ impl BitflagsBuilder {
 }
 
 impl TypeBuilder for BitflagsBuilder {
+    fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.builder.add_attribute(attr);
+        self
+    }
+
     fn get_type(&self) -> Type {
         let enum_builder = &self.builder;
+        let mut attrs = self.builder.attrs.to_vec();
+        attrs.push(Attribute(TypeRef::Name("Tangara.Flags".to_string()), vec![]));
         Type {
+            attrs,
             vis: enum_builder.vis.clone(),
             namespace: enum_builder.builder.borrow().namespace.clone(),
             name: enum_builder.name.clone(),
             id: generate_type_id(&enum_builder.name),
-            attrs: vec![
-                Attribute(TypeRef::Name("Flags".to_string()), vec![])
-            ],
             kind: Enum(enum_builder.literals.clone())
         }
     }

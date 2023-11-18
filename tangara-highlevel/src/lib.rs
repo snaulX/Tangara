@@ -27,7 +27,6 @@ pub enum TypeKind {
     Class(Vec<Constructor>, Vec<Property>, Vec<Method>),
     Enum(HashMap<String, Value>),
     Interface(Vec<Property>, Vec<Method>),
-    // TODO: do something with Struct or remove it because it tries to full copy of Class
     Struct(Vec<Constructor>, Vec<Property>),
     TypeAlias(Box<TypeRef>)
 }
@@ -81,6 +80,9 @@ pub enum Value {
     UInt(u32),
     ULong(u64),
     String(String),
+    Array(Vec<Value>),
+    Tuple(Vec<Value>),
+    Object(HashMap<String, Box<Value>>)
 }
 
 impl Default for Value {
@@ -157,14 +159,16 @@ impl From<&str> for Value {
 
 // Structs block
 #[derive(Debug, Clone)]
-pub struct Argument(Vec<Attribute>, TypeRef, String, ArgumentKind);
+pub struct Argument(pub Vec<Attribute>, pub TypeRef, pub String, pub ArgumentKind);
 
+/// Metadata for reflection's member (such as package, type, it's member and etc.)
 #[derive(Debug, Clone)]
-pub struct Attribute(TypeRef, Vec<Value>);
+pub struct Attribute(pub TypeRef, pub Vec<Value>);
 
 //#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Package {
+    pub attrs: Vec<Attribute>,
     pub name: String,
     pub id: u64,
     pub types: Vec<Type>
@@ -172,22 +176,24 @@ pub struct Package {
 
 #[derive(Debug, Clone)]
 pub struct Type {
+    pub attrs: Vec<Attribute>,
     pub vis: Visibility,
     pub namespace: String,
     pub name: String,
     pub id: u64,
-    pub attrs: Vec<Attribute>,
     pub kind: TypeKind
 }
 
 #[derive(Debug, Clone)]
 pub struct Constructor {
+    pub attrs: Vec<Attribute>,
     pub vis: Visibility,
     pub args: Vec<Argument>
 }
 
 #[derive(Debug, Clone)]
 pub struct Property {
+    pub attrs: Vec<Attribute>,
     pub getter_visibility: Visibility,
     pub setter_visibility: Option<Visibility>,
     pub prop_type: TypeRef,
@@ -197,6 +203,7 @@ pub struct Property {
 
 #[derive(Debug, Clone)]
 pub struct Method {
+    pub attrs: Vec<Attribute>,
     pub vis: Visibility,
     pub name: String,
     pub id: u64,

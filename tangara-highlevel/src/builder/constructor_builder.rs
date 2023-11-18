@@ -7,6 +7,7 @@ pub trait ConstructorCollector {
 
 pub struct ConstructorBuilder<'a, T: ConstructorCollector> {
     builder: &'a mut T,
+    attrs: Vec<Attribute>,
     vis: Visibility,
     arg_attrs: Vec<Attribute>,
     args: Vec<Argument>
@@ -17,10 +18,16 @@ impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
         let vis = builder.get_default_visibility();
         Self {
             builder,
+            attrs: vec![],
             vis,
             arg_attrs: Vec::new(),
             args: Vec::new()
         }
+    }
+
+    pub fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
     }
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
@@ -72,6 +79,7 @@ impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
 
     pub fn get_constructor(&self) -> Constructor {
         Constructor {
+            attrs: self.attrs.to_vec(),
             vis: self.vis,
             args: self.args.to_vec(),
         }

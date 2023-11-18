@@ -1,5 +1,5 @@
 use crate::builder::generate_member_id;
-use crate::{Property, TypeRef, Visibility};
+use crate::{Attribute, Property, TypeRef, Visibility};
 
 pub trait PropertyCollector {
     fn get_default_visibility(&self) -> Visibility;
@@ -8,6 +8,7 @@ pub trait PropertyCollector {
 
 pub struct PropertyBuilder<'a, T: PropertyCollector> {
     builder: &'a mut T,
+    attrs: Vec<Attribute>,
     getter_visibility: Visibility,
     setter_visibility: Option<Visibility>,
     prop_type: TypeRef,
@@ -18,12 +19,18 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
     pub(crate) fn new(builder: &'a mut T, prop_type: TypeRef, name: &str) -> Self {
         let getter_visibility = builder.get_default_visibility();
         Self {
+            attrs: vec![],
             builder,
             getter_visibility,
             setter_visibility: None,
             prop_type,
             name: name.to_string()
         }
+    }
+
+    pub fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
     }
 
     /// Set visibility for getter
@@ -40,6 +47,7 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
 
     pub fn get_property(&self) -> Property {
         Property {
+            attrs: self.attrs.to_vec(),
             getter_visibility: self.getter_visibility,
             setter_visibility: self.setter_visibility,
             prop_type: self.prop_type.clone(),

@@ -7,7 +7,7 @@ use proc_macro2::Ident;
 use quote::ToTokens;
 use syn::{FnArg, Item, parse_file, Pat, ReturnType, TraitItem, Type, Visibility};
 use tangara_highlevel::builder::*;
-use tangara_highlevel::{Package, TypeRef, Visibility as TgVis};
+use tangara_highlevel::{Attribute, Package, TypeRef, Value, Visibility as TgVis};
 
 pub struct Config {
     pub ctor_names: Vec<String>,
@@ -106,7 +106,9 @@ impl PackageGenerator {
     fn parse_item(&mut self, item: &Item) {
         match item {
             Item::Enum(_) => {}
-            Item::Impl(_) => {}
+            Item::Impl(impl_item) => {
+                //pass
+            }
             Item::Mod(mod_item) => {
                 let prev_ns = self.package_builder.borrow().get_namespace();
                 let next_ns = mod_item.ident.to_string().replace("::", ".");
@@ -225,7 +227,9 @@ impl PackageGenerator {
         for (_, cb) in self.structs {
             cb.build();
         }
-        self.package_builder.borrow().build()
+        let mut builder = self.package_builder.borrow_mut();
+        builder.add_attribute(Attribute(TypeRef::from("Tangara.Lang"), vec![Value::from("Rust")]));
+        builder.build()
     }
 
     pub fn generate_to_file<P: AsRef<Path>>(self, path: P) -> std::io::Result<()> {

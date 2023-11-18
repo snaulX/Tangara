@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::{Package, Type, TypeRef, Visibility};
+use crate::{Attribute, Package, Type, TypeRef, Visibility};
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 
@@ -34,6 +34,7 @@ pub(crate) fn generate_member_id(name: &String) -> u64 {
 }
 
 pub trait TypeBuilder {
+    fn add_attribute(&mut self, attr: Attribute) -> &mut Self;
     fn get_type(&self) -> Type;
     fn build(self) -> Type;
 }
@@ -45,6 +46,7 @@ pub struct PackageBuilder {
     constructor_visibility: Visibility,
     property_visibility: Visibility,
     method_visibility: Visibility,
+    attrs: Vec<Attribute>,
     types: Vec<Type>
 }
 
@@ -58,7 +60,8 @@ impl PackageBuilder {
                 constructor_visibility: Visibility::Public,
                 property_visibility: Visibility::Public,
                 method_visibility: Visibility::Public,
-                types: Vec::new()
+                attrs: vec![],
+                types: vec![]
             }
         ))
     }
@@ -80,8 +83,14 @@ impl PackageBuilder {
         xxh3_64_with_secret(self.name.as_bytes(), &PACKAGE_SECRET)
     }
 
+    pub fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
+    }
+
     pub fn build(&self) -> Package {
         Package {
+            attrs: self.attrs.to_vec(),
             name: self.name.clone(),
             id: self.get_id(),
             types: self.types.to_vec(),

@@ -8,6 +8,7 @@ pub trait MethodCollector {
 
 pub struct MethodBuilder<'a, T: MethodCollector> {
     builder: &'a mut T,
+    attrs: Vec<Attribute>,
     vis: Visibility,
     name: String,
     arg_attrs: Vec<Attribute>,
@@ -20,12 +21,18 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
         let vis = builder.get_default_visibility();
         Self {
             builder,
+            attrs: vec![],
             vis,
             name: name.to_string(),
             arg_attrs: Vec::new(),
             args: Vec::new(),
             return_type: None
         }
+    }
+
+    pub fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
     }
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
@@ -80,6 +87,7 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
 
     pub fn get_method(&self) -> Method {
         Method {
+            attrs: self.attrs.to_vec(),
             vis: self.vis,
             name: self.name.clone(),
             id: generate_member_id(&self.name),
