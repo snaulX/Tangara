@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::path::Path;
 use std::rc::Rc;
-use proc_macro2::Ident;
 use quote::ToTokens;
-use syn::{FnArg, Item, parse_file, Pat, ReturnType, TraitItem, Type, Visibility};
+use syn::*;
 use tangara_highlevel::builder::*;
 use tangara_highlevel::{Attribute, Package, TypeRef, Value, Visibility as TgVis};
 
@@ -89,6 +88,33 @@ fn get_typeref(t: &Type) -> Option<TypeRef> {
     }
 }
 
+fn parse_return_type<T: MethodCollector>(fn_builder: &mut MethodBuilder<T>, return_type: &ReturnType) {
+    match return_type {
+        ReturnType::Default => {} // return type of fn_builder by default is nothing
+        ReturnType::Type(_, ret_type) => {
+            if let Some(ret_typeref) = get_typeref(ret_type) {
+                fn_builder.return_type(ret_typeref);
+            }
+        }
+    }
+}
+
+fn parse_arg<T: MethodCollector>(fn_builder: &mut MethodBuilder<T>, fn_arg: &PatType) {
+    if let Pat::Ident(arg_ident) = &fn_arg.pat.deref() {
+        let arg_name = arg_ident.ident.to_string();
+        let arg_type = get_typeref(&fn_arg.ty).expect("Arg type cannot be None");
+        if arg_ident.mutability.is_some() {
+            fn_builder.arg_ref(arg_type, arg_name.as_str());
+        }
+        else {
+            fn_builder.arg(arg_type, arg_name.as_str());
+        }
+    }
+    else {
+        panic!("Function arg name is not ident");
+    }
+}
+
 impl PackageGenerator {
     pub fn new(package_name: &str, config: Config) -> Self {
         Self {
@@ -98,8 +124,7 @@ impl PackageGenerator {
         }
     }
 
-    fn get_or_create_struct(&mut self, name: &Ident) -> &mut ClassBuilder {
-        let name = name.to_string();
+    fn get_or_create_struct(&mut self, name: String) -> &mut ClassBuilder {
         self.structs.entry(name.clone()).or_insert(create_class(self.package_builder.clone(), &name))
     }
 
@@ -107,7 +132,109 @@ impl PackageGenerator {
         match item {
             Item::Enum(_) => {}
             Item::Impl(impl_item) => {
-                //pass
+                // TODO make inheritance of trait on high-level
+                if let TypeRef::Name(type_name) = get_typeref(&impl_item.self_ty)
+                    .expect("Type in 'impl' cannot be None") {
+                    for item_impl in &impl_item.items {
+                        match item_impl {
+                            ImplItem::Fn(fn_item) => {
+                                // TODO check on get_ set_ pair functions to generate properties
+                                let fn_sig = &fn_item.sig;
+                                let name = fn_sig.ident.to_string();
+                                // Check on constructor name
+                                if self.config.ctor_names.contains(&name) {
+                                    // Make constructor
+                                    let mut ctor_builder = self.get_or_create_struct(type_name.clone())
+                                        .add_constructor();
+                                    ctor_builder.set_visibility(get_visibility(&fn_item.vis));
+                                    // Add attribute: name of 'fn' associated to this constructor
+                                    ctor_builder.add_attribute(Attribute(
+                                        TypeRef::from("Tangara.Rust.ConstructorFnName"),
+                                        vec![Value::String(name.clone())]
+                                    ));
+
+                                    // Check for generics emptiness
+                                    if fn_sig.generics.params.len() > 0 {
+                                        panic!("Constructor can't have generics");
+                                    }
+
+                                    // Check for correct return type
+                                    match &fn_sig.output {
+                                        ReturnType::Default => {
+                                            panic!("Constructor can't return nothing");
+                                        }
+                                        ReturnType::Type(_, return_type_boxed) => {
+                                            let return_type = return_type_boxed.to_token_stream().to_string();
+                                            if return_type != "Self" &&
+                                                return_type != type_name {
+                                                panic!("Return type of constructor can't be not as type of impl: {} != {}",
+                                                       return_type, type_name);
+                                            }
+                                        }
+                                    }
+
+                                    // Parse arguments
+                                    for arg in &fn_sig.inputs {
+                                        match arg {
+                                            FnArg::Receiver(_) => {
+                                                panic!("Constructor can't contains 'self' argument");
+                                            }
+                                            FnArg::Typed(ctor_arg) => {
+                                                if let Pat::Ident(arg_ident) = &ctor_arg.pat.deref() {
+                                                    let arg_name = arg_ident.ident.to_string();
+                                                    let arg_type = get_typeref(&ctor_arg.ty).expect("Arg type cannot be None");
+                                                    if arg_ident.mutability.is_some() {
+                                                        ctor_builder.arg_ref(arg_type, arg_name.as_str());
+                                                    }
+                                                    else {
+                                                        ctor_builder.arg(arg_type, arg_name.as_str());
+                                                    }
+                                                }
+                                                else {
+                                                    panic!("Constructor arg name is not ident");
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    ctor_builder.build();
+                                }
+                                else {
+                                    // Make function
+                                    let mut fn_builder = self.get_or_create_struct(type_name.clone())
+                                        .add_method(&name);
+                                    fn_builder.set_visibility(get_visibility(&fn_item.vis));
+
+                                    // TODO parse generics
+
+                                    // Parse return type
+                                    parse_return_type(&mut fn_builder, &fn_sig.output);
+
+                                    // Parse arguments
+                                    let mut have_self = false;
+                                    for arg in &fn_sig.inputs {
+                                        match arg {
+                                            FnArg::Receiver(_) => {
+                                                have_self = true;
+                                            }
+                                            FnArg::Typed(fn_arg) => {
+                                                parse_arg(&mut fn_builder, fn_arg);
+                                            }
+                                        }
+                                    }
+                                    // TODO make function be static if haven't 'self' argument
+
+                                    fn_builder.build();
+                                }
+                            }
+                            ImplItem::Type(_) => {} // TODO add checks in typeref making in function (return or args) on this type
+                            _ => {}
+                        }
+                    }
+                }
+                else {
+                    panic!("TypeRef from 'impl' root must be Name");
+                }
             }
             Item::Mod(mod_item) => {
                 let prev_ns = self.package_builder.borrow().get_namespace();
@@ -125,7 +252,7 @@ impl PackageGenerator {
                 self.package_builder.borrow_mut().set_namespace(&prev_ns);
             }
             Item::Struct(struct_item) => {
-                let mut class_builder = self.get_or_create_struct(&struct_item.ident);
+                let mut class_builder = self.get_or_create_struct(struct_item.ident.to_string());
                 class_builder.set_visibility(get_visibility(&struct_item.vis));
             }
             Item::Trait(trait_item) => {
@@ -143,21 +270,7 @@ impl PackageGenerator {
                             // TODO parse generics
 
                             // Parse return type
-                            match &fn_item.sig.output {
-                                ReturnType::Default => {} // return type of fn_builder by default is nothing
-                                ReturnType::Type(_, ret_type) => {
-                                    if let Some(ret_typeref) = get_typeref(ret_type) {
-                                        /*if let TypeRef::Tuple(types) = &ret_typeref {
-                                            if types.len() != 0 {
-                                                fn_builder.return_type(ret_typeref);
-                                            }
-                                        }
-                                        else {*/
-                                            fn_builder.return_type(ret_typeref);
-                                        //}
-                                    }
-                                }
-                            }
+                            parse_return_type(&mut fn_builder, &fn_item.sig.output);
 
                             // Parse arguments
                             let mut have_self = false;
@@ -167,19 +280,7 @@ impl PackageGenerator {
                                         have_self = true;
                                     }
                                     FnArg::Typed(fn_arg) => {
-                                        if let Pat::Ident(arg_ident) = &fn_arg.pat.deref() {
-                                            let arg_name = arg_ident.ident.to_string();
-                                            let arg_type = get_typeref(&fn_arg.ty).expect("Arg type cannot be None");
-                                            if arg_ident.mutability.is_some() {
-                                                fn_builder.arg_ref(arg_type, arg_name.as_str());
-                                            }
-                                            else {
-                                                fn_builder.arg(arg_type, arg_name.as_str());
-                                            }
-                                        }
-                                        else {
-                                            panic!("Trait function arg name is not ident");
-                                        }
+                                        parse_arg(&mut fn_builder, fn_arg);
                                     }
                                 }
                             }

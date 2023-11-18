@@ -13,11 +13,14 @@ mod constructor_builder;
 mod property_builder;
 mod method_builder;
 
-pub use crate::builder::alias_builder::TypeAliasBuilder;
-pub use crate::builder::class_builder::ClassBuilder;
-pub use crate::builder::enum_builder::EnumBuilder;
-pub use crate::builder::interface_builder::InterfaceBuilder;
-pub use crate::builder::struct_builder::StructBuilder;
+pub use crate::builder::alias_builder::*;
+pub use crate::builder::class_builder::*;
+pub use crate::builder::enum_builder::*;
+pub use crate::builder::interface_builder::*;
+pub use crate::builder::struct_builder::*;
+pub use crate::builder::method_builder::*;
+pub use crate::builder::property_builder::*;
+pub use crate::builder::constructor_builder::*;
 
 const PACKAGE_SECRET: [u8; 192] = const_custom_default_secret(772);
 const TYPE_SECRET: [u8; 192] = const_custom_default_secret(4900);
