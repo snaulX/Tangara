@@ -26,7 +26,16 @@
       ],
       "kind": {
         "TypeAlias": {
-          "Name": "u8"
+          "Generic": [
+            {
+              "Name": "Tangara.Std.Ptr"
+            },
+            [
+              {
+                "Name": "u8"
+              }
+            ]
+          ]
         }
       }
     },
@@ -74,7 +83,16 @@
                 "Name": "usize"
               },
               {
-                "Name": "u8"
+                "Generic": [
+                  {
+                    "Name": "Tangara.Std.Ptr"
+                  },
+                  [
+                    {
+                      "Name": "u8"
+                    }
+                  ]
+                ]
               }
             ]
           ]
@@ -85,8 +103,8 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "Tangara",
-      "name": "Context",
-      "id": 12490447094366545338,
+      "name": "TypeTable",
+      "id": 15805489126155215399,
       "generics": [
         [],
         []
@@ -117,8 +135,8 @@
             {
               "attrs": [],
               "vis": "Public",
-              "name": "add_package",
-              "id": 12359109620120953044,
+              "name": "add_type",
+              "id": 9515708672011284147,
               "generics": [
                 [],
                 []
@@ -134,14 +152,14 @@
                 ]
               ],
               "return_type": {
-                "Name": "TypeTable"
+                "Name": "FuncTable"
               }
             },
             {
               "attrs": [],
               "vis": "Public",
-              "name": "get_package",
-              "id": 78053248962896222,
+              "name": "get_type",
+              "id": 7569306663432790416,
               "generics": [
                 [],
                 []
@@ -157,7 +175,7 @@
                 ]
               ],
               "return_type": {
-                "Name": "TypeTable"
+                "Name": "FuncTable"
               }
             }
           ],
@@ -392,8 +410,8 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "Tangara",
-      "name": "Runtime",
-      "id": 4288140446718285857,
+      "name": "Context",
+      "id": 12490447094366545338,
       "generics": [
         [],
         []
@@ -415,7 +433,7 @@
                   ]
                 ]
               ],
-              "vis": "Public",
+              "vis": "Internal",
               "args": []
             }
           ],
@@ -424,15 +442,47 @@
             {
               "attrs": [],
               "vis": "Public",
-              "name": "use_context",
-              "id": 10327001465945502749,
+              "name": "add_package",
+              "id": 12359109620120953044,
               "generics": [
                 [],
                 []
               ],
-              "args": [],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
               "return_type": {
-                "Name": "Context"
+                "Name": "TypeTable"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_package",
+              "id": 78053248962896222,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "TypeTable"
               }
             }
           ],
@@ -478,7 +528,26 @@
               "getter_visibility": "Public",
               "setter_visibility": "Public",
               "prop_type": {
-                "Name": "Option"
+                "Generic": [
+                  {
+                    "Name": "Option"
+                  },
+                  [
+                    {
+                      "Fn": [
+                        null,
+                        [
+                          {
+                            "Name": "Ptr"
+                          },
+                          {
+                            "Name": "Ptr"
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                ]
               },
               "name": "setter",
               "id": 9297565244898655042
@@ -491,8 +560,8 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "Tangara",
-      "name": "TypeTable",
-      "id": 15805489126155215399,
+      "name": "Runtime",
+      "id": 4288140446718285857,
       "generics": [
         [],
         []
@@ -514,7 +583,7 @@
                   ]
                 ]
               ],
-              "vis": "Internal",
+              "vis": "Public",
               "args": []
             }
           ],
@@ -523,47 +592,15 @@
             {
               "attrs": [],
               "vis": "Public",
-              "name": "add_type",
-              "id": 9515708672011284147,
+              "name": "use_context",
+              "id": 10327001465945502749,
               "generics": [
                 [],
                 []
               ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "u64"
-                  },
-                  "id",
-                  "Default"
-                ]
-              ],
+              "args": [],
               "return_type": {
-                "Name": "FuncTable"
-              }
-            },
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "get_type",
-              "id": 7569306663432790416,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "u64"
-                  },
-                  "id",
-                  "Default"
-                ]
-              ],
-              "return_type": {
-                "Name": "FuncTable"
+                "Name": "Context"
               }
             }
           ],

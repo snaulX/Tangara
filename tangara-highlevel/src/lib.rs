@@ -61,6 +61,7 @@ pub enum TypeRef {
     Id(u64),
     Direct(Type),
 
+    Generic(Box<TypeRef>, Vec<TypeRef>),
     Tuple(Vec<TypeRef>),
     Fn(Option<Box<TypeRef>>, Vec<TypeRef>)
 }

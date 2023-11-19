@@ -49,8 +49,18 @@ fn get_typeref_bytes(type_ref: &TypeRef) -> Vec<u8> {
         TypeRef::Direct(t) => {
             t.id.to_be_bytes().to_vec()
         }
+        TypeRef::Generic(base_type, generics) => {
+            let mut bytes_slice = Vec::with_capacity(generics.len() + 2);
+            bytes_slice.push(vec![0]); // id of generic
+            bytes_slice.push(get_typeref_bytes(&base_type));
+            for g in generics {
+                bytes_slice.push(get_typeref_bytes(g));
+            }
+            bytes_slice.concat()
+        }
         TypeRef::Tuple(types) => {
-            let mut bytes_slice = Vec::with_capacity(types.len());
+            let mut bytes_slice = Vec::with_capacity(types.len() + 1);
+            bytes_slice.push(vec![1]); // id of tuple
             for t in types {
                 bytes_slice.push(get_typeref_bytes(t));
             }
@@ -63,7 +73,8 @@ fn get_typeref_bytes(type_ref: &TypeRef) -> Vec<u8> {
                 // empty u64 id with all 0es
                 vec![0u8; 8]
             };
-            let mut bytes_slice = Vec::with_capacity(arg_types.len() + 1);
+            let mut bytes_slice = Vec::with_capacity(arg_types.len() + 2);
+            bytes_slice.push(vec![2]); // id of fn
             bytes_slice.push(ret_bytes);
             for t in arg_types {
                 bytes_slice.push(get_typeref_bytes(t));

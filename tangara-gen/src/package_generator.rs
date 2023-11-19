@@ -62,7 +62,10 @@ fn get_visibility(vis: &Visibility) -> TgVis {
 // TODO also return attributes (we can make ones to mark is as mutable, reference and etc.)
 fn get_typeref(t: &Type) -> Option<TypeRef> {
     match t {
-        Type::Array(_) => Some(TypeRef::from("Array")),
+        Type::Array(array_type) => Some(TypeRef::Generic(
+            Box::new(TypeRef::from("Tangara.Std.Array")),
+            vec![get_typeref(&array_type.elem).expect("Array type cannot be None")]
+        )),
         Type::BareFn(fn_type) => {
             // Parse return type
             let return_type = match &fn_type.output {
@@ -99,18 +102,60 @@ fn get_typeref(t: &Type) -> Option<TypeRef> {
                 path.push('.');
             }
             path.remove(path.len() - 1); // remove last '.'
-            Some(TypeRef::Name(path))
+            let typeref = TypeRef::Name(path);
+            if let Some(last_seg) = &path_type.path.segments.last() {
+                match &last_seg.arguments {
+                    PathArguments::None => {
+                        Some(typeref)
+                    }
+                    PathArguments::AngleBracketed(angle_path) => {
+                        let mut generics = vec![];
+                        for generic in &angle_path.args {
+                            match &generic {
+                                GenericArgument::Lifetime(lifetime) => {
+                                    // TODO add attribute
+                                }
+                                GenericArgument::Type(generic_type) => {
+                                    generics.push(get_typeref(generic_type).expect("Generic type can't be None"));
+                                }
+                                _ => {
+                                    println!("[Warning] (tangara-gen::PackageGenerator) Other generics \
+                                    types are not supported");
+                                }
+                            }
+                        }
+                        if generics.len() > 0 {
+                            Some(TypeRef::Generic(Box::new(typeref), generics))
+                        } else {
+                            Some(typeref)
+                        }
+                    }
+                    PathArguments::Parenthesized(_) => {
+                        println!("[Warning] (tangara-gen::PackageGenerator) What parenthesized path type mean?");
+                        Some(typeref)
+                    }
+                }
+            } else {
+                Some(typeref)
+            }
         },
         Type::Ptr(ptr_type) => {
             // TODO add attribute of mutability if ref_type is mutable
-            // TODO change type from default to Ptr<T>
-            get_typeref(&ptr_type.elem)
+            Some(TypeRef::Generic(
+                Box::new(TypeRef::from("Tangara.Std.Ptr")),
+                vec![get_typeref(&ptr_type.elem).expect("Pointer type cannot be None")]
+            ))
         },
         Type::Reference(ref_type) => {
             // TODO add attribute of mutability if ref_type is mutable
             get_typeref(&ref_type.elem)
         },
-        Type::Slice(_) => Some(TypeRef::from("Array")),
+        Type::Slice(slice_type) => {
+            Some(TypeRef::Generic(
+                Box::new(TypeRef::from("Tangara.Std.Array")),
+                vec![get_typeref(&slice_type.elem).expect("Slice type cannot be None")]
+            ))
+        },
         Type::TraitObject(_) => None,
         Type::Tuple(tuple_type) => {
             let mut types = vec![];
