@@ -1,5 +1,5 @@
 use crate::builder::generate_method_id;
-use crate::{Argument, ArgumentKind, Attribute, Method, TypeRef, Value, Visibility};
+use crate::{Argument, ArgumentKind, Attribute, Generics, Method, TypeRef, Value, Visibility};
 
 pub trait MethodCollector {
     fn get_default_visibility(&self) -> Visibility;
@@ -13,7 +13,9 @@ pub struct MethodBuilder<'a, T: MethodCollector> {
     name: String,
     arg_attrs: Vec<Attribute>,
     args: Vec<Argument>,
-    return_type: Option<TypeRef>
+    return_type: Option<TypeRef>,
+    generics: Vec<String>,
+    generics_where: Vec<(String, TypeRef)>
 }
 
 impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
@@ -24,9 +26,11 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
             attrs: vec![],
             vis,
             name: name.to_string(),
-            arg_attrs: Vec::new(),
-            args: Vec::new(),
-            return_type: None
+            arg_attrs: vec![],
+            args: vec![],
+            return_type: None,
+            generics: vec![],
+            generics_where: vec![]
         }
     }
 
@@ -37,6 +41,25 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.vis = vis;
+        self
+    }
+
+    /// Set generic types for this method.
+    /// If generics already exists - **it rewrites old**.
+    pub fn generics(&mut self, generics: Vec<String>) -> &mut Self {
+        self.generics = generics;
+        self
+    }
+
+    /// Add statement for generics `where statement.0: statement.1`.
+    /// Function *panics* if first type doesn't exists in generics of this method.
+    pub fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self {
+        if !self.generics.contains(&statement.0) {
+            panic!(
+                "Generic {} doesn't exists in this method, so it can't be used in 'where' statement",
+                statement.0);
+        }
+        self.generics_where.push(statement);
         self
     }
 
@@ -91,6 +114,7 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
             vis: self.vis,
             name: self.name.clone(),
             id: generate_method_id(&self.name, &self.args),
+            generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
             args: self.args.to_vec(),
             return_type: self.return_type.clone(),
         }

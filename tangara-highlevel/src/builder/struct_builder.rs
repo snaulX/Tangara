@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Constructor, Property, Type, TypeRef, Visibility};
+use crate::{Attribute, Constructor, Generics, Property, Type, TypeRef, Visibility};
 use crate::builder::constructor_builder::{ConstructorBuilder, ConstructorCollector};
 use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
 use crate::TypeKind::Struct;
@@ -12,7 +12,9 @@ pub struct StructBuilder {
     name: String,
     vis: Visibility,
     constructors: Vec<Constructor>,
-    properties: Vec<Property>
+    properties: Vec<Property>,
+    generics: Vec<String>,
+    generics_where: Vec<(String, TypeRef)>
 }
 
 impl StructBuilder {
@@ -24,12 +26,33 @@ impl StructBuilder {
             name: name.to_string(),
             vis,
             constructors: Vec::new(),
-            properties: Vec::new()
+            properties: Vec::new(),
+            generics: vec![],
+            generics_where: vec![]
         }
     }
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.vis = vis;
+        self
+    }
+
+    /// Set generic types for this struct.
+    /// If generics already exists - **it rewrites old**.
+    pub fn generics(&mut self, generics: Vec<String>) -> &mut Self {
+        self.generics = generics;
+        self
+    }
+
+    /// Add statement for generics `where statement.0: statement.1`.
+    /// Function *panics* if first type doesn't exists in generics of this struct.
+    pub fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self {
+        if !self.generics.contains(&statement.0) {
+            panic!(
+                "Generic {} doesn't exists in this struct, so it can't be used in 'where' statement",
+                statement.0);
+        }
+        self.generics_where.push(statement);
         self
     }
 
@@ -62,6 +85,7 @@ impl TypeBuilder for StructBuilder {
             namespace,
             name,
             id,
+            generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
             kind: Struct(self.constructors.to_vec(), self.properties.to_vec())
         }
     }

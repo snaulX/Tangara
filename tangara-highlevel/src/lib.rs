@@ -1,5 +1,3 @@
-extern crate core;
-
 use std::collections::HashMap;
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
@@ -29,9 +27,28 @@ pub enum ArgumentKind {
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub enum TypeKind {
-    Class(Vec<Constructor>, Vec<Property>, Vec<Method>, Vec<TypeRef>),
+    Class(
+        /// Sealed or not
+        bool,
+        /// Constructors
+        Vec<Constructor>,
+        /// Properties
+        Vec<Property>,
+        /// Methods
+        Vec<Method>,
+        /// Parents
+        Vec<TypeRef>
+    ),
     Enum(HashMap<String, Value>),
-    Interface(Vec<Property>, Vec<Method>, Vec<TypeRef>),
+    Interface(
+        /// Properties
+        Vec<Property>,
+        /// Methods
+        Vec<Method>,
+        /// Parents
+        Vec<TypeRef>
+    ),
+    /// Data type that contains only data
     Struct(Vec<Constructor>, Vec<Property>),
     TypeAlias(Box<TypeRef>)
 }
@@ -184,6 +201,13 @@ pub struct Argument(pub Vec<Attribute>, pub TypeRef, pub String, pub ArgumentKin
 #[derive(Debug, Clone)]
 pub struct Attribute(pub TypeRef, pub Vec<Value>);
 
+/// Representation of generics
+/// **Generics.0** - vec of types: `<A, B, C, D, ...>`
+/// **Generics.1** - vec of 'where' statement with pairs like: `where String: TypeRef`
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
+pub struct Generics(pub Vec<String>, pub Vec<(String, TypeRef)>);
+
 // TODO add coding conventions field (naming conventions)
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
@@ -195,7 +219,6 @@ pub struct Package {
 }
 
 // TODO add operator overloading (including explicit/implicit convertation)
-// TODO add generics
 // TODO add abstract, static classes
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
@@ -205,6 +228,7 @@ pub struct Type {
     pub namespace: String,
     pub name: String,
     pub id: u64,
+    pub generics: Generics,
     pub kind: TypeKind
 }
 
@@ -236,6 +260,7 @@ pub struct Method {
     pub vis: Visibility,
     pub name: String,
     pub id: u64,
+    pub generics: Generics,
     pub args: Vec<Argument>,
     pub return_type: Option<TypeRef>
 }

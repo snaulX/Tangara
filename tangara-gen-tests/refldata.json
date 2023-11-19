@@ -16,10 +16,47 @@
   "types": [
     {
       "attrs": [],
+      "vis": "Private",
+      "namespace": "MyPackage",
+      "name": "TestTrait",
+      "id": 10795555482230717765,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Interface": [
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "kekov",
+              "id": 9868880391107710744,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [],
+              "return_type": {
+                "Name": "i32"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
       "vis": "Public",
       "namespace": "MyPackage",
       "name": "MyTrait",
       "id": 16396140555736685195,
+      "generics": [
+        [],
+        []
+      ],
       "kind": {
         "Interface": [
           [],
@@ -29,6 +66,10 @@
               "vis": "Public",
               "name": "foo",
               "id": 13574490469189226774,
+              "generics": [
+                [],
+                []
+              ],
               "args": [
                 [
                   [],
@@ -46,6 +87,10 @@
               "vis": "Public",
               "name": "bar",
               "id": 10297498164471647047,
+              "generics": [
+                [],
+                []
+              ],
               "args": [],
               "return_type": {
                 "Name": "String"
@@ -62,6 +107,10 @@
       "namespace": "MyPackage",
       "name": "BoxedStr",
       "id": 12780686785942148536,
+      "generics": [
+        [],
+        []
+      ],
       "kind": {
         "TypeAlias": {
           "Name": "Box"
@@ -74,8 +123,13 @@
       "namespace": "MyPackage",
       "name": "MyStruct",
       "id": 7534407210518214439,
+      "generics": [
+        [],
+        []
+      ],
       "kind": {
         "Class": [
+          true,
           [
             {
               "attrs": [
@@ -101,6 +155,10 @@
               "vis": "Private",
               "name": "foo",
               "id": 13574490469189226774,
+              "generics": [
+                [],
+                []
+              ],
               "args": [
                 [
                   [],
@@ -118,6 +176,10 @@
               "vis": "Private",
               "name": "bar",
               "id": 10297498164471647047,
+              "generics": [
+                [],
+                []
+              ],
               "args": [],
               "return_type": {
                 "Name": "String"
@@ -128,6 +190,10 @@
               "vis": "Internal",
               "name": "repeat_name",
               "id": 17567713076779176127,
+              "generics": [
+                [],
+                []
+              ],
               "args": [
                 [
                   [],
@@ -147,6 +213,10 @@
               "vis": "Internal",
               "name": "set_name",
               "id": 1641961565049420977,
+              "generics": [
+                [],
+                []
+              ],
               "args": [
                 [
                   [],
@@ -164,6 +234,10 @@
               "vis": "Internal",
               "name": "get_name",
               "id": 552281434682100053,
+              "generics": [
+                [],
+                []
+              ],
               "args": [],
               "return_type": {
                 "Name": "str"
@@ -184,6 +258,10 @@
       "namespace": "MyPackage",
       "name": "TestStruct",
       "id": 16038391058121417372,
+      "generics": [
+        [],
+        []
+      ],
       "kind": {
         "Struct": [
           [],

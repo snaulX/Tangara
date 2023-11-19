@@ -77,7 +77,6 @@ fn get_typeref_bytes(type_ref: &TypeRef) -> Vec<u8> {
 pub(crate) fn generate_method_id(name: &String, args: &Vec<Argument>) -> u64 {
     // What makes method unique? His name and types of his arguments
     let mut args_bytes = vec![];
-    const ARG_SIZE: usize = std::mem::size_of::<TypeRef>();
     for arg in args {
         let arg_slice = get_typeref_bytes(&arg.1);
         args_bytes = [args_bytes, arg_slice].concat()

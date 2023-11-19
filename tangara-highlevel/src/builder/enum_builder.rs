@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Type, TypeRef, Value, Visibility};
+use crate::{Attribute, Generics, Type, TypeRef, Value, Visibility};
 use crate::TypeKind::Enum;
 
 pub struct EnumBuilder {
@@ -60,6 +60,7 @@ impl TypeBuilder for EnumBuilder {
             namespace,
             name,
             id,
+            generics: Generics(vec![], vec![]),
             kind: Enum(self.literals.clone())
         }
     }
@@ -112,6 +113,7 @@ impl TypeBuilder for BitflagsBuilder {
             namespace,
             name,
             id,
+            generics: Generics(vec![], vec![]),
             kind: Enum(enum_builder.literals.clone())
         }
     }

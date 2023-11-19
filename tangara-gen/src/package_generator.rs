@@ -58,6 +58,7 @@ fn get_visibility(vis: &Visibility) -> TgVis {
     }
 }
 
+// TODO also return attributes (we can make ones to mark is as mutable, reference and etc.)
 fn get_typeref(t: &Type) -> Option<TypeRef> {
     match t {
         Type::Array(_) => Some(TypeRef::from("Array")),
@@ -180,7 +181,7 @@ impl PackageGenerator {
                     let ctor_names = self.config.ctor_names.to_vec();
                     let dont_inherit_traits = self.config.dont_inherit_traits.to_vec();
 
-                    let mut cb = self.get_or_create_struct(type_name.clone());
+                    let cb = self.get_or_create_struct(type_name.clone());
                     if let Some(trait_name) = for_name {
                         // Again, if impl is with trait, then we need to inherit class from it
                         // But if really needs to. Because some traits is not important to inherit from.
@@ -262,11 +263,11 @@ impl PackageGenerator {
                                     parse_return_type(&mut fn_builder, &fn_sig.output);
 
                                     // Parse arguments
-                                    let mut have_self = false;
+                                    //let mut have_self = false;
                                     for arg in &fn_sig.inputs {
                                         match arg {
                                             FnArg::Receiver(_) => {
-                                                have_self = true;
+                                                //have_self = true;
                                             }
                                             FnArg::Typed(fn_arg) => {
                                                 parse_arg(&mut fn_builder, fn_arg);
@@ -304,7 +305,7 @@ impl PackageGenerator {
             }
             Item::Struct(struct_item) => {
                 let generate_pub_fields = self.config.generate_pub_fields;
-                let mut class_builder = self.get_or_create_struct(struct_item.ident.to_string());
+                let class_builder = self.get_or_create_struct(struct_item.ident.to_string());
                 class_builder.set_visibility(get_visibility(&struct_item.vis));
 
                 if generate_pub_fields {
@@ -353,7 +354,8 @@ impl PackageGenerator {
                                 }
                             }
                             if !have_self {
-                                panic!("Trait (interface) method must have 'self' argument");
+                                println!("[Warning] (tangara-gen::PackageGenerator) Trait \
+                                 (interface) method must have 'self' argument. Ignoring it.");
                             }
 
                             fn_builder.build();
@@ -395,7 +397,7 @@ impl PackageGenerator {
     pub fn generate(self) -> Package {
         for (_, cb) in self.structs {
             let result = cb.get_type();
-            if let TypeKind::Class(ctors, props, methods, parents) = &result.kind {
+            if let TypeKind::Class(_, ctors, props, methods, parents) = &result.kind {
                 let mut builder = self.package_builder.borrow_mut();
                 builder.add_type(
                     // Change type's kind on Struct if it's possible

@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Method, Property, Type, TypeRef, Visibility};
+use crate::{Attribute, Generics, Method, Property, Type, TypeRef, Visibility};
 use crate::builder::method_builder::{MethodBuilder, MethodCollector};
 use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
 use crate::TypeKind::Interface;
@@ -13,7 +13,9 @@ pub struct InterfaceBuilder {
     vis: Visibility,
     properties: Vec<Property>,
     methods: Vec<Method>,
-    parents: Vec<TypeRef>
+    parents: Vec<TypeRef>,
+    generics: Vec<String>,
+    generics_where: Vec<(String, TypeRef)>
 }
 
 impl InterfaceBuilder {
@@ -26,7 +28,9 @@ impl InterfaceBuilder {
             vis,
             properties: vec![],
             methods: vec![],
-            parents: vec![]
+            parents: vec![],
+            generics: vec![],
+            generics_where: vec![]
         }
     }
 
@@ -37,6 +41,25 @@ impl InterfaceBuilder {
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.vis = vis;
+        self
+    }
+
+    /// Set generic types for this interface.
+    /// If generics already exists - **it rewrites old**.
+    pub fn generics(&mut self, generics: Vec<String>) -> &mut Self {
+        self.generics = generics;
+        self
+    }
+
+    /// Add statement for generics `where statement.0: statement.1`.
+    /// Function *panics* if first type doesn't exists in generics of this interface.
+    pub fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self {
+        if !self.generics.contains(&statement.0) {
+            panic!(
+                "Generic {} doesn't exists in this interface, so it can't be used in 'where' statement",
+                statement.0);
+        }
+        self.generics_where.push(statement);
         self
     }
 
@@ -69,6 +92,7 @@ impl TypeBuilder for InterfaceBuilder {
             namespace,
             name,
             id,
+            generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
             kind: Interface(
                 self.properties.to_vec(),
                 self.methods.to_vec(),

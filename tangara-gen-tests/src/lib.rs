@@ -1,5 +1,9 @@
 mod bindings;
 
+trait TestTrait {
+    fn kekov() -> i32;
+}
+
 pub trait MyTrait {
     fn foo(&mut self, a: String);
     fn bar(&self) -> String;
