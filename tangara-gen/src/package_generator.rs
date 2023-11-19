@@ -59,19 +59,44 @@ fn get_visibility(vis: &Visibility) -> TgVis {
     }
 }
 
-// TODO also return attributes (we can make ones to mark is as mutable, reference and etc.)
-fn get_typeref(t: &Type) -> Option<TypeRef> {
+fn get_attr_lifetime(lifetime: &Lifetime) -> Attribute {
+    Attribute(
+        TypeRef::from("Tangara.Rust.Lifetime"),
+        vec![Value::String(lifetime.ident.to_string())]
+    )
+}
+
+fn get_typeref(t: &Type) -> Option<(TypeRef, Vec<Attribute>)> {
     match t {
-        Type::Array(array_type) => Some(TypeRef::Generic(
-            Box::new(TypeRef::from("Tangara.Std.Array")),
-            vec![get_typeref(&array_type.elem).expect("Array type cannot be None")]
-        )),
+        Type::Array(array_type) => {
+            let arr_len = if let Expr::Lit(len_lit) = &array_type.len {
+                if let Lit::Int(len_lit_int) = &len_lit.lit {
+                    Value::UInt(len_lit_int.base10_parse::<u32>().expect("Array length must be u32"))
+                } else {
+                    panic!("Array length cannot be non-int literal")
+                }
+            } else {
+                panic!("Array length cannot be non-literal");
+            };
+            let mut attrs = vec![Attribute(
+                TypeRef::from("Tangara.Metadata.ArraySize"), vec![arr_len]
+            )];
+            let (array_type, mut arr_attrs) = get_typeref(&array_type.elem).expect("Array type cannot be None");
+            attrs.append(&mut arr_attrs);
+            Some((
+                TypeRef::Generic(
+                    Box::new(TypeRef::from("Tangara.Std.Array")),
+                    vec![array_type]
+                ),
+                attrs
+            ))
+        },
         Type::BareFn(fn_type) => {
             // Parse return type
             let return_type = match &fn_type.output {
                 ReturnType::Default => None,
                 ReturnType::Type(_, ret_type) => {
-                    if let Some(ret_typeref) = get_typeref(ret_type) {
+                    if let Some((ret_typeref, _)) = get_typeref(ret_type) {
                         Some(Box::new(ret_typeref))
                     }
                     else {
@@ -83,10 +108,11 @@ fn get_typeref(t: &Type) -> Option<TypeRef> {
             // Parse arguments
             let mut args = vec![];
             for input in &fn_type.inputs {
-                args.push(get_typeref(&input.ty).expect("Argument type cannot be None"));
+                let (arg_type, _) = get_typeref(&input.ty).expect("Argument type cannot be None");
+                args.push(arg_type);
             }
 
-            Some(TypeRef::Fn(return_type, args))
+            Some((TypeRef::Fn(return_type, args), vec![]))
         },
         Type::Group(_) => None,
         Type::ImplTrait(_) => None,
@@ -106,17 +132,19 @@ fn get_typeref(t: &Type) -> Option<TypeRef> {
             if let Some(last_seg) = &path_type.path.segments.last() {
                 match &last_seg.arguments {
                     PathArguments::None => {
-                        Some(typeref)
+                        Some((typeref, vec![]))
                     }
                     PathArguments::AngleBracketed(angle_path) => {
                         let mut generics = vec![];
+                        let mut attrs = vec![];
                         for generic in &angle_path.args {
                             match &generic {
                                 GenericArgument::Lifetime(lifetime) => {
-                                    // TODO add attribute
+                                    attrs.push(get_attr_lifetime(lifetime));
                                 }
                                 GenericArgument::Type(generic_type) => {
-                                    generics.push(get_typeref(generic_type).expect("Generic type can't be None"));
+                                    let (gtref, _) = get_typeref(generic_type).expect("Generic type can't be None");
+                                    generics.push(gtref);
                                 }
                                 _ => {
                                     println!("[Warning] (tangara-gen::PackageGenerator) Other generics \
@@ -125,35 +153,55 @@ fn get_typeref(t: &Type) -> Option<TypeRef> {
                             }
                         }
                         if generics.len() > 0 {
-                            Some(TypeRef::Generic(Box::new(typeref), generics))
+                            Some((TypeRef::Generic(Box::new(typeref), generics), attrs))
                         } else {
-                            Some(typeref)
+                            Some((typeref, attrs))
                         }
                     }
                     PathArguments::Parenthesized(_) => {
                         println!("[Warning] (tangara-gen::PackageGenerator) What parenthesized path type mean?");
-                        Some(typeref)
+                        Some((typeref, vec![]))
                     }
                 }
             } else {
-                Some(typeref)
+                Some((typeref, vec![]))
             }
         },
         Type::Ptr(ptr_type) => {
-            // TODO add attribute of mutability if ref_type is mutable
-            Some(TypeRef::Generic(
-                Box::new(TypeRef::from("Tangara.Std.Ptr")),
-                vec![get_typeref(&ptr_type.elem).expect("Pointer type cannot be None")]
+            let mut attrs = vec![];
+            if ptr_type.mutability.is_some() {
+                attrs.push(Attribute(TypeRef::from("Tangara.Rust.Mutable"), vec![]))
+            }
+            let (ptr_typeref, mut ptr_attrs) = get_typeref(&ptr_type.elem).expect("Pointer type cannot be None");
+            attrs.append(&mut ptr_attrs);
+            Some((
+                TypeRef::Generic(
+                    Box::new(TypeRef::from("Tangara.Std.Ptr")),
+                    vec![ptr_typeref]
+                ),
+                attrs
             ))
         },
         Type::Reference(ref_type) => {
-            // TODO add attribute of mutability if ref_type is mutable
-            get_typeref(&ref_type.elem)
+            let mut attrs = vec![Attribute(TypeRef::from("Tangara.Rust.Reference"), vec![])];
+            if let Some(lifetime) = &ref_type.lifetime {
+                attrs.push(get_attr_lifetime(lifetime));
+            }
+            if ref_type.mutability.is_some() {
+                attrs.push(Attribute(TypeRef::from("Tangara.Rust.Mutable"), vec![]))
+            }
+            let (ref_type, mut ref_attrs) = get_typeref(&ref_type.elem).expect("Reference type can't be None");
+            attrs.append(&mut ref_attrs);
+            Some((ref_type, attrs))
         },
         Type::Slice(slice_type) => {
-            Some(TypeRef::Generic(
-                Box::new(TypeRef::from("Tangara.Std.Array")),
-                vec![get_typeref(&slice_type.elem).expect("Slice type cannot be None")]
+            let (slice_typeref, attrs) = get_typeref(&slice_type.elem).expect("Slice type cannot be None");
+            Some((
+                TypeRef::Generic(
+                    Box::new(TypeRef::from("Tangara.Std.Array")),
+                    vec![slice_typeref]
+                ),
+                attrs
             ))
         },
         Type::TraitObject(_) => None,
@@ -162,10 +210,10 @@ fn get_typeref(t: &Type) -> Option<TypeRef> {
             for tt in &tuple_type.elems {
                 let ott = get_typeref(tt);
                 if ott.is_some() {
-                    types.push(ott.unwrap());
+                    types.push(ott.unwrap().0);
                 }
             }
-            Some(TypeRef::Tuple(types))
+            Some((TypeRef::Tuple(types), vec![]))
         }
         _ => None
     }
@@ -175,7 +223,7 @@ fn parse_return_type<T: MethodCollector>(fn_builder: &mut MethodBuilder<T>, retu
     match return_type {
         ReturnType::Default => {} // return type of fn_builder by default is nothing
         ReturnType::Type(_, ret_type) => {
-            if let Some(ret_typeref) = get_typeref(ret_type) {
+            if let Some((ret_typeref, _)) = get_typeref(ret_type) {
                 fn_builder.return_type(ret_typeref);
             }
         }
@@ -186,11 +234,14 @@ fn parse_arg<T: MethodCollector>(fn_builder: &mut MethodBuilder<T>, fn_arg: &Pat
     if let Pat::Ident(arg_ident) = &fn_arg.pat.deref() {
         let arg_name = arg_ident.ident.to_string();
         let arg_type = get_typeref(&fn_arg.ty).expect("Arg type cannot be None");
+        for attr in arg_type.1 {
+            fn_builder.arg_attribute(attr);
+        }
         if arg_ident.mutability.is_some() {
-            fn_builder.arg_ref(arg_type, arg_name.as_str());
+            fn_builder.arg_ref(arg_type.0, arg_name.as_str());
         }
         else {
-            fn_builder.arg(arg_type, arg_name.as_str());
+            fn_builder.arg(arg_type.0, arg_name.as_str());
         }
     }
     else {
@@ -268,10 +319,7 @@ fn parse_generics<T: GenericsCollector + AttributeCollector>(builder: &mut T, ge
             }
             GenericParam::Lifetime(lifetime) => {
                 // Add attribute to mark for Tangara that in Rust it has lifetime
-                let lt = lifetime.lifetime.ident.to_string();
-                builder.add_attribute(
-                    Attribute(TypeRef::from("Tangara.Rust.Lifetime"), vec![Value::String(lt)])
-                );
+                builder.add_attribute(get_attr_lifetime(&lifetime.lifetime));
             }
             GenericParam::Const(_) => {
                 println!("[Warning] (tangara-gen::PackageGenerator) Const are not supported in generics.");
@@ -282,9 +330,12 @@ fn parse_generics<T: GenericsCollector + AttributeCollector>(builder: &mut T, ge
     if let Some(where_clause) = &generics.where_clause {
         for predicate in &where_clause.predicates {
             match predicate {
-                WherePredicate::Lifetime(_) => {}
+                WherePredicate::Lifetime(_) => {
+                    println!("[Warning] (tangara-gen::PackageGenerator) Lifetimes are not supported \
+                    in 'where' clauses.");
+                }
                 WherePredicate::Type(type_predicate) => {
-                    if let Some(TypeRef::Name(type_name)) = get_typeref(&type_predicate.bounded_ty) {
+                    if let Some((TypeRef::Name(type_name), _)) = get_typeref(&type_predicate.bounded_ty) {
                         parse_bounds(builder, type_name, &type_predicate.bounds);
                     } else {
                         panic!("Can't get TypeRef::Name from bounded type in 'where' clause");
@@ -323,7 +374,7 @@ impl PackageGenerator {
                 if let Some((_, type_name, _)) = &impl_item.trait_ {
                     for_name = Some(type_name.to_token_stream().to_string());
                 }
-                if let TypeRef::Name(type_name) = get_typeref(&impl_item.self_ty)
+                if let (TypeRef::Name(type_name), _) = get_typeref(&impl_item.self_ty)
                     .expect("Type in 'impl' cannot be None") {
                     let ctor_names = self.config.ctor_names.to_vec();
                     let dont_inherit_traits = self.config.dont_inherit_traits.to_vec();
@@ -383,11 +434,14 @@ impl PackageGenerator {
                                                 if let Pat::Ident(arg_ident) = &ctor_arg.pat.deref() {
                                                     let arg_name = arg_ident.ident.to_string();
                                                     let arg_type = get_typeref(&ctor_arg.ty).expect("Arg type cannot be None");
+                                                    for attr in arg_type.1 {
+                                                        ctor_builder.arg_attribute(attr);
+                                                    }
                                                     if arg_ident.mutability.is_some() {
-                                                        ctor_builder.arg_ref(arg_type, arg_name.as_str());
+                                                        ctor_builder.arg_ref(arg_type.0, arg_name.as_str());
                                                     }
                                                     else {
-                                                        ctor_builder.arg(arg_type, arg_name.as_str());
+                                                        ctor_builder.arg(arg_type.0, arg_name.as_str());
                                                     }
                                                 }
                                                 else {
@@ -462,10 +516,15 @@ impl PackageGenerator {
                     for field in &struct_item.fields {
                         if let Visibility::Public(_) = field.vis {
                             if let Some(field_ident) = &field.ident {
+                                let (field_type, field_attrs) = get_typeref(&field.ty)
+                                    .expect("Field cannot have type None");
                                 let mut prop_builder = class_builder.add_property(
-                                    get_typeref(&field.ty).expect("Field cannot have type None"),
+                                    field_type,
                                     &field_ident.to_string()
                                 );
+                                for attr in field_attrs {
+                                    prop_builder.add_attribute(attr);
+                                }
                                 prop_builder.getter_visibility(TgVis::Public);
                                 prop_builder.setter_visibility(TgVis::Public);
                                 prop_builder.build();
@@ -521,7 +580,7 @@ impl PackageGenerator {
                 let mut alias_builder = create_alias(
                     self.package_builder.clone(),
                     &type_item.ident.to_string(),
-                    get_typeref(&type_item.ty).expect("Type in alias cannot be None")
+                    get_typeref(&type_item.ty).expect("Type in alias cannot be None").0
                 );
                 alias_builder.set_visibility(get_visibility(&type_item.vis));
                 parse_generics(&mut alias_builder, &type_item.generics);
