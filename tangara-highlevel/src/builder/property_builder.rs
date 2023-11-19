@@ -1,4 +1,4 @@
-use crate::builder::generate_property_id;
+use crate::builder::{AttributeCollector, generate_property_id};
 use crate::{Attribute, Property, TypeRef, Visibility};
 
 pub trait PropertyCollector {
@@ -28,11 +28,6 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
         }
     }
 
-    pub fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
-        self.attrs.push(attr);
-        self
-    }
-
     /// Set visibility for getter
     pub fn getter_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.getter_visibility = vis;
@@ -60,5 +55,12 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
     pub fn build(&'a mut self) -> &'a mut T {
         self.builder.add_property(self.get_property());
         self.builder
+    }
+}
+
+impl<T: PropertyCollector> AttributeCollector for PropertyBuilder<'_, T> {
+    fn add_attribute(&mut self, attribute: Attribute) -> &mut Self {
+        self.attrs.push(attribute);
+        self
     }
 }

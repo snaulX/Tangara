@@ -5,6 +5,7 @@ use std::path::Path;
 use std::rc::Rc;
 use quote::ToTokens;
 use syn::*;
+use syn::punctuated::Punctuated;
 use tangara_highlevel::builder::*;
 use tangara_highlevel::{Attribute, Package, TypeKind, TypeRef, Value, Visibility as TgVis};
 
@@ -152,6 +153,107 @@ fn parse_arg<T: MethodCollector>(fn_builder: &mut MethodBuilder<T>, fn_arg: &Pat
     }
 }
 
+fn parse_generics<T: GenericsCollector + AttributeCollector>(builder: &mut T, generics: &Generics) {
+    let mut generic_types = vec![];
+    let mut generic_wheres = vec![];
+
+    // Local function for parsing generics bounds
+    let mut parse_bounds = |builder: &mut T, bounded: String, bounds: &Punctuated<TypeParamBound, Token![+]>| {
+        for bound in bounds {
+            match bound {
+                TypeParamBound::Trait(trait_bound) => {
+                    let mut trait_name = String::new();
+                    for seg in &trait_bound.path.segments {
+                        trait_name.push_str(&seg.ident.to_string());
+                        match &seg.arguments {
+                            PathArguments::None => {}
+                            PathArguments::AngleBracketed(angle) => {
+                                trait_name.push('<');
+                                for ga in &angle.args {
+                                    match &ga {
+                                        GenericArgument::Type(gt) => {
+                                            trait_name.push_str(&gt.to_token_stream().to_string());
+                                            trait_name.push(',');
+                                        }
+                                        _ => {
+                                            println!("[Warning] (tangara-gen::PackageGenerator) \
+                                                    Recursive generic arguments are not supported.");
+                                        }
+                                    }
+                                }
+                                if angle.args.len() > 0 {
+                                    // Remove last extra ','
+                                    trait_name.remove(trait_name.len() - 1);
+                                }
+                                trait_name.push('>');
+                            }
+                            PathArguments::Parenthesized(_) => {
+                                println!("[Warning] (tangara-gen::PackageGenerator) \
+                                        Parenthesized generic arguments are not supported.");
+                            }
+                        }
+                        trait_name.push('.');
+                    }
+                    // Remove last extra '.'
+                    trait_name.remove(trait_name.len() - 1); // I hope segments wasn't empty...
+                    // Finally add bound
+                    generic_wheres.push((bounded.clone(), TypeRef::Name(trait_name)));
+                }
+                TypeParamBound::Lifetime(lifetime) => {
+                    // Add attribute to mark for Tangara that in Rust this generic has lifetime
+                    let lt = lifetime.ident.to_string();
+                    builder.add_attribute(
+                        Attribute(
+                            TypeRef::from("Tangara.Rust.LifetimeGeneric"),
+                            vec![Value::String(bounded.clone()), Value::String(lt)]
+                        )
+                    );
+                }
+                _ => {}
+            }
+        }
+    };
+
+    for gp in &generics.params {
+        match gp {
+            GenericParam::Type(generic_type) => {
+                let generic_name = generic_type.ident.to_string();
+                generic_types.push(generic_name.clone());
+                parse_bounds(builder, generic_name, &generic_type.bounds);
+            }
+            GenericParam::Lifetime(lifetime) => {
+                // Add attribute to mark for Tangara that in Rust it has lifetime
+                let lt = lifetime.lifetime.ident.to_string();
+                builder.add_attribute(
+                    Attribute(TypeRef::from("Tangara.Rust.Lifetime"), vec![Value::String(lt)])
+                );
+            }
+            GenericParam::Const(_) => {
+                println!("[Warning] (tangara-gen::PackageGenerator) Const are not supported in generics.");
+            }
+        }
+    }
+
+    if let Some(where_clause) = &generics.where_clause {
+        for predicate in &where_clause.predicates {
+            match predicate {
+                WherePredicate::Lifetime(_) => {}
+                WherePredicate::Type(type_predicate) => {
+                    if let Some(TypeRef::Name(type_name)) = get_typeref(&type_predicate.bounded_ty) {
+                        parse_bounds(builder, type_name, &type_predicate.bounds);
+                    } else {
+                        panic!("Can't get TypeRef::Name from bounded type in 'where' clause");
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    builder.generics(generic_types);
+    builder.generic_wheres(generic_wheres);
+}
+
 impl PackageGenerator {
     pub fn new(package_name: &str, config: Config) -> Self {
         Self {
@@ -256,10 +358,7 @@ impl PackageGenerator {
                                     // Make function
                                     let mut fn_builder = cb.add_method(&name);
                                     fn_builder.set_visibility(get_visibility(&fn_item.vis));
-
-                                    // TODO parse generics
-
-                                    // Parse return type
+                                    parse_generics(&mut fn_builder, &fn_item.sig.generics);
                                     parse_return_type(&mut fn_builder, &fn_sig.output);
 
                                     // Parse arguments
@@ -283,7 +382,7 @@ impl PackageGenerator {
                             _ => {}
                         }
                     }
-                }
+                } // if let TypeRef::Name(type_name) = get_typeref(&impl_item.self_ty)
                 else {
                     panic!("TypeRef from 'impl' root must be Name");
                 }
@@ -296,17 +395,23 @@ impl PackageGenerator {
                 new_ns.push('.');
                 new_ns.push_str(&next_ns);
                 self.package_builder.borrow_mut().set_namespace(&new_ns);
+                // Set default type visibility to mod's
+                let old_vis = self.package_builder.borrow().type_visibility;
+                self.package_builder.borrow_mut().type_visibility = get_visibility(&mod_item.vis);
                 if let Some((_, items)) = &mod_item.content {
                     for it in items {
                         self.parse_item(it);
                     }
                 }
-                self.package_builder.borrow_mut().set_namespace(&prev_ns);
+                let mut builder = self.package_builder.borrow_mut();
+                builder.set_namespace(&prev_ns);
+                builder.type_visibility = old_vis;
             }
             Item::Struct(struct_item) => {
                 let generate_pub_fields = self.config.generate_pub_fields;
                 let class_builder = self.get_or_create_struct(struct_item.ident.to_string());
                 class_builder.set_visibility(get_visibility(&struct_item.vis));
+                parse_generics(class_builder, &struct_item.generics);
 
                 if generate_pub_fields {
                     for field in &struct_item.fields {
@@ -330,15 +435,15 @@ impl PackageGenerator {
                     &trait_item.ident.to_string() // name
                 );
                 interface_builder.set_visibility(get_visibility(&trait_item.vis));
+                parse_generics(&mut interface_builder, &trait_item.generics);
+
                 for it in &trait_item.items {
                     match it {
                         TraitItem::Fn(fn_item) => {
                             // TODO check on get_ set_ pair functions to generate properties
                             let mut fn_builder = interface_builder.add_method(&fn_item.sig.ident.to_string());
-
-                            // TODO parse generics
-
-                            // Parse return type
+                            fn_builder.set_visibility(TgVis::Public);
+                            parse_generics(&mut fn_builder, &fn_item.sig.generics);
                             parse_return_type(&mut fn_builder, &fn_item.sig.output);
 
                             // Parse arguments
@@ -364,6 +469,7 @@ impl PackageGenerator {
                         _ => {}
                     }
                 }
+
                 interface_builder.build();
             }
             Item::Type(type_item) => {
@@ -373,6 +479,7 @@ impl PackageGenerator {
                     get_typeref(&type_item.ty).expect("Type in alias cannot be None")
                 );
                 alias_builder.set_visibility(get_visibility(&type_item.vis));
+                parse_generics(&mut alias_builder, &type_item.generics);
                 alias_builder.build();
             }
             _ => {}

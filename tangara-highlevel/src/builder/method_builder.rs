@@ -1,4 +1,4 @@
-use crate::builder::generate_method_id;
+use crate::builder::{AttributeCollector, generate_method_id, GenericsCollector};
 use crate::{Argument, ArgumentKind, Attribute, Generics, Method, TypeRef, Value, Visibility};
 
 pub trait MethodCollector {
@@ -41,25 +41,6 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.vis = vis;
-        self
-    }
-
-    /// Set generic types for this method.
-    /// If generics already exists - **it rewrites old**.
-    pub fn generics(&mut self, generics: Vec<String>) -> &mut Self {
-        self.generics = generics;
-        self
-    }
-
-    /// Add statement for generics `where statement.0: statement.1`.
-    /// Function *panics* if first type doesn't exists in generics of this method.
-    pub fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self {
-        if !self.generics.contains(&statement.0) {
-            panic!(
-                "Generic {} doesn't exists in this method, so it can't be used in 'where' statement",
-                statement.0);
-        }
-        self.generics_where.push(statement);
         self
     }
 
@@ -123,5 +104,31 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
     pub fn build(&'a mut self) -> &'a mut T {
         self.builder.add_method(self.get_method());
         self.builder
+    }
+}
+
+impl<T: MethodCollector> GenericsCollector for MethodBuilder<'_, T> {
+    fn generic(&mut self, generic: String) -> &mut Self {
+        self.generics.push(generic);
+        self
+    }
+
+    /// Add statement for generics `where statement.0: statement.1`.
+    /// Function *panics* if first type doesn't exists in generics of this method.
+    fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self {
+        if !self.generics.contains(&statement.0) {
+            panic!(
+                "Generic {} doesn't exists in this method, so it can't be used in 'where' statement",
+                statement.0);
+        }
+        self.generics_where.push(statement);
+        self
+    }
+}
+
+impl<T: MethodCollector> AttributeCollector for MethodBuilder<'_, T> {
+    fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
     }
 }

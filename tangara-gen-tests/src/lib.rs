@@ -1,12 +1,16 @@
 mod bindings;
 
-trait TestTrait {
+trait WarningTrait {
     fn kekov() -> i32;
 }
 
 pub trait MyTrait {
     fn foo(&mut self, a: String);
     fn bar(&self) -> String;
+}
+
+pub struct GenericsTest<T: MyTrait> {
+    some_field: Option<T>
 }
 
 pub struct TestStruct {

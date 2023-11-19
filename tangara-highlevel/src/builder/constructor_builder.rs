@@ -1,4 +1,5 @@
 use crate::{Argument, ArgumentKind, Attribute, Constructor, TypeRef, Value, Visibility};
+use crate::builder::AttributeCollector;
 
 pub trait ConstructorCollector {
     fn get_default_visibility(&self) -> Visibility;
@@ -23,11 +24,6 @@ impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
             arg_attrs: Vec::new(),
             args: Vec::new()
         }
-    }
-
-    pub fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
-        self.attrs.push(attr);
-        self
     }
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
@@ -89,5 +85,12 @@ impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
     pub fn build(&'a mut self) -> &'a mut T {
         self.builder.add_constructor(self.get_constructor());
         self.builder
+    }
+}
+
+impl<T: ConstructorCollector> AttributeCollector for ConstructorBuilder<'_, T> {
+    fn add_attribute(&mut self, attribute: Attribute) -> &mut Self {
+        self.attrs.push(attribute);
+        self
     }
 }

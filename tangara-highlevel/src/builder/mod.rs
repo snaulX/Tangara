@@ -90,13 +90,41 @@ pub trait TypeBuilder {
     fn build(self) -> Type;
 }
 
+pub trait GenericsCollector {
+    fn generic(&mut self, generic: String) -> &mut Self;
+    fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self;
+    fn generics(&mut self, generics: Vec<String>) -> &mut Self {
+        for g in generics {
+            self.generic(g);
+        }
+        self
+    }
+    fn generic_wheres(&mut self, generic_wheres: Vec<(String, TypeRef)>) -> &mut Self {
+        for gw in generic_wheres {
+            self.generic_where(gw);
+        }
+        self
+    }
+}
+
+pub trait AttributeCollector {
+    fn add_attribute(&mut self, attribute: Attribute) -> &mut Self;
+}
+
+impl<T: TypeBuilder> AttributeCollector for T {
+    #[inline]
+    fn add_attribute(&mut self, attribute: Attribute) -> &mut Self {
+        self.add_attribute(attribute)
+    }
+}
+
 pub struct PackageBuilder {
     name: String,
     namespace: String,
-    type_visibility: Visibility,
-    constructor_visibility: Visibility,
-    property_visibility: Visibility,
-    method_visibility: Visibility,
+    pub type_visibility: Visibility,
+    pub constructor_visibility: Visibility,
+    pub property_visibility: Visibility,
+    pub method_visibility: Visibility,
     attrs: Vec<Attribute>,
     types: Vec<Type>
 }
@@ -134,11 +162,6 @@ impl PackageBuilder {
         xxh3_64_with_secret(self.name.as_bytes(), &PACKAGE_SECRET)
     }
 
-    pub fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
-        self.attrs.push(attr);
-        self
-    }
-
     pub fn add_type(&mut self, t: Type) -> &mut Self {
         self.types.push(t);
         self
@@ -151,6 +174,13 @@ impl PackageBuilder {
             id: self.get_id(),
             types: self.types.to_vec(),
         }
+    }
+}
+
+impl AttributeCollector for PackageBuilder {
+    fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
     }
 }
 
