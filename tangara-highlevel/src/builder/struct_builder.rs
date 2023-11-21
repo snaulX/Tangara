@@ -32,11 +32,6 @@ impl StructBuilder {
         }
     }
 
-    pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
-        self.vis = vis;
-        self
-    }
-
     pub fn add_constructor(&mut self) -> ConstructorBuilder<Self> {
         ConstructorBuilder::new(self)
     }
@@ -49,6 +44,11 @@ impl StructBuilder {
 impl TypeBuilder for StructBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
         self.attrs.push(attr);
+        self
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.vis = vis;
         self
     }
 

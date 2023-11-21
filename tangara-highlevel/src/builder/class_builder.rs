@@ -44,11 +44,6 @@ impl ClassBuilder {
         self
     }
 
-    pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
-        self.vis = vis;
-        self
-    }
-
     /// Make class open to inherit from
     pub fn open(&mut self) -> &mut Self {
         self.sealed = false;
@@ -71,6 +66,11 @@ impl ClassBuilder {
 impl TypeBuilder for ClassBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
         self.attrs.push(attr);
+        self
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.vis = vis;
         self
     }
 

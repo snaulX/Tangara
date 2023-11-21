@@ -39,11 +39,6 @@ impl InterfaceBuilder {
         self
     }
 
-    pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
-        self.vis = vis;
-        self
-    }
-
     pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
         PropertyBuilder::new(self, prop_type, name)
     }
@@ -56,6 +51,11 @@ impl InterfaceBuilder {
 impl TypeBuilder for InterfaceBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
         self.attrs.push(attr);
+        self
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.vis = vis;
         self
     }
 

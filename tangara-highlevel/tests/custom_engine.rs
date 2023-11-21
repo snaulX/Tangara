@@ -12,12 +12,12 @@ fn alpha_engine() {
         let mut type_builder = create_enum(builder.clone(), "WindowFlags")
             .bitflags();
         type_builder
-            .literal("None")
-            .literal("Fullscreen")
-            .literal("FullscreenDesktop")
-            .literal("Borderless")
-            .literal("Resizable")
-            .literal("Maximized");
+            .variant("None")
+            .variant("Fullscreen")
+            .variant("FullscreenDesktop")
+            .variant("Borderless")
+            .variant("Resizable")
+            .variant("Maximized");
         type_builder.build();
         let mut type_builder = create_class(builder.clone(), "Window");
         type_builder

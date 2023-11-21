@@ -97,6 +97,7 @@ pub(crate) fn generate_method_id(name: &String, args: &Vec<Argument>) -> u64 {
 
 pub trait TypeBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self;
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self;
     fn get_type(&self) -> Type;
     fn build(self) -> Type;
 }
@@ -205,6 +206,10 @@ pub fn create_struct(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> St
 
 pub fn create_enum(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> EnumBuilder {
     EnumBuilder::new(pkg_builder, name)
+}
+
+pub fn create_enum_class(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> EnumClassBuilder {
+    EnumClassBuilder::new(pkg_builder, name)
 }
 
 pub fn create_interface(pkg_builder: Rc<RefCell<PackageBuilder>>, name: &str) -> InterfaceBuilder {

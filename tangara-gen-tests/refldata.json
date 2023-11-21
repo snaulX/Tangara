@@ -49,6 +49,182 @@
     },
     {
       "attrs": [],
+      "vis": "Private",
+      "namespace": "MyPackage",
+      "name": "EnumUnit",
+      "id": 8987749074312580853,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Enum": [
+          [
+            "Variant",
+            {
+              "Int": 0
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Internal",
+      "namespace": "MyPackage",
+      "name": "EnumTuple",
+      "id": 15270927524829422527,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "EnumClass": [
+          [
+            [
+              "Variant",
+              [
+                {
+                  "attrs": [],
+                  "getter_visibility": "Private",
+                  "setter_visibility": "Private",
+                  "prop_type": {
+                    "Name": "i32"
+                  },
+                  "name": "field0",
+                  "id": 16576852482574640428
+                }
+              ]
+            ]
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "EnumStruct",
+      "id": 186229043989425557,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "EnumClass": [
+          [
+            [
+              "Variant",
+              [
+                {
+                  "attrs": [],
+                  "getter_visibility": "Private",
+                  "setter_visibility": "Private",
+                  "prop_type": {
+                    "Name": "i32"
+                  },
+                  "name": "a",
+                  "id": 1784559676337384610
+                }
+              ]
+            ]
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Private",
+      "namespace": "MyPackage",
+      "name": "EnumMixed",
+      "id": 5083507064775102309,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "EnumClass": [
+          [
+            [
+              "Unit",
+              []
+            ],
+            [
+              "Tuple",
+              [
+                {
+                  "attrs": [],
+                  "getter_visibility": "Private",
+                  "setter_visibility": "Private",
+                  "prop_type": {
+                    "Name": "i32"
+                  },
+                  "name": "field0",
+                  "id": 16576852482574640428
+                }
+              ]
+            ]
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Private",
+      "namespace": "MyPackage",
+      "name": "EnumComplex",
+      "id": 4724787910385973656,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "EnumClass": [
+          [
+            [
+              "Unit",
+              []
+            ],
+            [
+              "Tuple",
+              [
+                {
+                  "attrs": [],
+                  "getter_visibility": "Private",
+                  "setter_visibility": "Private",
+                  "prop_type": {
+                    "Name": "i32"
+                  },
+                  "name": "field0",
+                  "id": 16576852482574640428
+                }
+              ]
+            ],
+            [
+              "Struct",
+              [
+                {
+                  "attrs": [],
+                  "getter_visibility": "Private",
+                  "setter_visibility": "Private",
+                  "prop_type": {
+                    "Name": "i32"
+                  },
+                  "name": "a",
+                  "id": 1784559676337384610
+                }
+              ]
+            ]
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
       "vis": "Public",
       "namespace": "MyPackage",
       "name": "MyTrait",

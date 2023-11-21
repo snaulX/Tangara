@@ -4,6 +4,33 @@ trait WarningTrait {
     fn kekov() -> i32;
 }
 
+enum EnumUnit {
+    Variant
+}
+
+pub(crate) enum EnumTuple {
+    Variant(i32)
+}
+
+pub enum EnumStruct {
+    Variant {
+        a: i32
+    }
+}
+
+enum EnumMixed {
+    Unit,
+    Tuple(i32)
+}
+
+enum EnumComplex {
+    Unit,
+    Tuple(i32),
+    Struct {
+        a: i32
+    }
+}
+
 pub trait MyTrait {
     fn foo(&mut self, a: String);
     fn bar(&self) -> String;

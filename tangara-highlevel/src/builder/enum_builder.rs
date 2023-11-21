@@ -1,16 +1,15 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
-use crate::builder::{generate_type_id, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Generics, Type, TypeRef, Value, Visibility};
-use crate::TypeKind::Enum;
+use crate::builder::{generate_type_id, GenericsCollector, PackageBuilder, PropertyBuilder, PropertyCollector, TypeBuilder};
+use crate::{Attribute, Generics, Method, Property, Type, TypeRef, Value, Visibility};
+use crate::TypeKind::{Enum, EnumClass};
 
 pub struct EnumBuilder {
     builder: Rc<RefCell<PackageBuilder>>,
     attrs: Vec<Attribute>,
     name: String,
     vis: Visibility,
-    literals: HashMap<String, Value>,
+    variants: Vec<(String, Value)>,
 }
 
 impl EnumBuilder {
@@ -21,7 +20,7 @@ impl EnumBuilder {
             builder,
             name: name.to_string(),
             vis,
-            literals: HashMap::new()
+            variants: vec![]
         }
     }
 
@@ -31,11 +30,11 @@ impl EnumBuilder {
         }
     }
 
-    pub fn literal(&mut self, literal: &str) -> &mut Self {
-        self.literal_value(literal, Value::Int(self.literals.len() as i32))
+    pub fn variant(&mut self, literal: &str) -> &mut Self {
+        self.variant_value(literal, Value::Int(self.variants.len() as i32))
     }
-    pub fn literal_value(&mut self, literal: &str, value: Value) -> &mut Self {
-        self.literals.insert(literal.to_string(), value);
+    pub fn variant_value(&mut self, literal: &str, value: Value) -> &mut Self {
+        self.variants.push((literal.to_string(), value));
         self
     }
 }
@@ -43,6 +42,11 @@ impl EnumBuilder {
 impl TypeBuilder for EnumBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
         self.attrs.push(attr);
+        self
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.vis = vis;
         self
     }
 
@@ -61,7 +65,7 @@ impl TypeBuilder for EnumBuilder {
             name,
             id,
             generics: Generics(vec![], vec![]),
-            kind: Enum(self.literals.clone())
+            kind: Enum(self.variants.clone())
         }
     }
 
@@ -78,21 +82,26 @@ pub struct BitflagsBuilder {
 }
 
 impl BitflagsBuilder {
-    pub fn literal(&mut self, literal: &str) -> &mut Self {
-        let literals_count = self.builder.literals.len() as u32;
+    pub fn variant(&mut self, literal: &str) -> &mut Self {
+        let literals_count = self.builder.variants.len() as u32;
         let value = if literals_count == 0 {
             0
         } else {
             1 << (literals_count - 1)
         };
-        self.builder.literal_value(literal, Value::UInt(value));
+        self.builder.variant_value(literal, Value::UInt(value));
         self
     }
 }
 
 impl TypeBuilder for BitflagsBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
-        self.builder.add_attribute(attr);
+        TypeBuilder::add_attribute(&mut self.builder, attr);
+        self
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.builder.set_visibility(vis);
         self
     }
 
@@ -114,7 +123,7 @@ impl TypeBuilder for BitflagsBuilder {
             name,
             id,
             generics: Generics(vec![], vec![]),
-            kind: Enum(enum_builder.literals.clone())
+            kind: Enum(enum_builder.variants.clone())
         }
     }
 
@@ -123,5 +132,130 @@ impl TypeBuilder for BitflagsBuilder {
         let mut builder = self.builder.builder.borrow_mut();
         builder.add_type(result_type.clone());
         result_type
+    }
+}
+
+pub struct EnumClassBuilder {
+    builder: Rc<RefCell<PackageBuilder>>,
+    attrs: Vec<Attribute>,
+    name: String,
+    vis: Visibility,
+    variants: Vec<(String, Vec<Property>)>,
+    methods: Vec<Method>,
+    generics: Vec<String>,
+    generics_where: Vec<(String, TypeRef)>,
+}
+
+impl EnumClassBuilder {
+    pub fn new(builder: Rc<RefCell<PackageBuilder>>, name: &str) -> Self {
+        let vis = builder.borrow().type_visibility;
+        Self {
+            attrs: vec![],
+            builder,
+            name: name.to_string(),
+            vis,
+            variants: vec![],
+            methods: vec![],
+            generics: vec![],
+            generics_where: vec![]
+        }
+    }
+
+    pub fn variant(&mut self, name: &str) -> VariantBuilder {
+        VariantBuilder::new(self, name)
+    }
+}
+
+impl TypeBuilder for EnumClassBuilder {
+    fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
+        self.attrs.push(attr);
+        self
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.vis = vis;
+        self
+    }
+
+    fn get_type(&self) -> Type {
+        let namespace = self.builder.borrow().namespace.clone();
+        let name = self.name.clone();
+        let mut full_name = String::with_capacity(namespace.len() + name.len() + 1);
+        full_name.push_str(&namespace);
+        full_name.push('.');
+        full_name.push_str(&name);
+        let id = generate_type_id(&full_name);
+        Type {
+            attrs: self.attrs.to_vec(),
+            vis: self.vis.clone(),
+            namespace,
+            name,
+            id,
+            generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
+            kind: EnumClass(self.variants.to_vec(), self.methods.to_vec()),
+        }
+    }
+
+    fn build(self) -> Type {
+        let result_type = self.get_type();
+        let mut builder = self.builder.borrow_mut();
+        builder.add_type(result_type.clone());
+        result_type
+    }
+}
+
+impl GenericsCollector for EnumClassBuilder {
+    fn generic(&mut self, generic: String) -> &mut Self {
+        self.generics.push(generic);
+        self
+    }
+
+    /// Add statement for generics `where statement.0: statement.1`.
+    /// Function *panics* if first type doesn't exists in generics of this enum class.
+    fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self {
+        if !self.generics.contains(&statement.0) {
+            panic!(
+                "Generic {} doesn't exists in this enum class, so it can't be used in 'where' statement",
+                statement.0);
+        }
+        self.generics_where.push(statement);
+        self
+    }
+}
+
+/// Builder of struct variant for *'enum class'*.
+/// Do not use separate from `EnumClassBuilder`.
+pub struct VariantBuilder<'a> {
+    builder: &'a mut EnumClassBuilder,
+    name: String,
+    properties: Vec<Property>
+}
+
+impl<'a> VariantBuilder<'a> {
+    pub(crate) fn new(builder: &'a mut EnumClassBuilder, name: &str) -> Self {
+        Self {
+            builder,
+            name: name.to_string(),
+            properties: vec![]
+        }
+    }
+
+    pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
+        PropertyBuilder::new(self, prop_type, name)
+    }
+
+    pub fn build(self) -> &'a mut EnumClassBuilder {
+        self.builder.variants.push((self.name, self.properties));
+        self.builder
+    }
+}
+
+impl<'a> PropertyCollector for VariantBuilder<'a> {
+    fn get_default_visibility(&self) -> Visibility {
+        self.builder.builder.borrow().property_visibility
+    }
+
+    fn add_property(&mut self, property: Property) {
+        self.properties.push(property);
     }
 }

@@ -27,16 +27,16 @@ impl TypeAliasBuilder {
             generics_where: vec![]
         }
     }
-
-    pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
-        self.vis = vis;
-        self
-    }
 }
 
 impl TypeBuilder for TypeAliasBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self {
         self.attrs.push(attr);
+        self
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.vis = vis;
         self
     }
 

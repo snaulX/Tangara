@@ -39,7 +39,16 @@ pub enum TypeKind {
         /// Parents
         Vec<TypeRef>
     ),
-    Enum(HashMap<String, Value>),
+    Enum(
+        /// Variants: Name = Value
+        Vec<(String, Value)>
+    ),
+    EnumClass(
+        /// Variants: Name(Properties)
+        Vec<(String, Vec<Property>)>,
+        /// Methods
+        Vec<Method>
+    ),
     Interface(
         /// Properties
         Vec<Property>,
@@ -104,11 +113,18 @@ pub enum Value {
     UShort(u16),
     UInt(u32),
     ULong(u64),
+    Float(f32),
+    Double(f64),
     String(String),
     Array(Vec<Value>),
     Tuple(Vec<Value>),
     Object(HashMap<String, Box<Value>>)
 }
+
+// - ULong!!
+// - No, UShort!
+// *KABOOM*
+// you know ULong/UShort sounds like "you long/short" and long and short are like.. uhm forget this
 
 impl Default for Value {
     fn default() -> Self {
@@ -177,6 +193,18 @@ impl From<usize> for Value {
         } else {
             Value::ULong(value as u64)
         }
+    }
+}
+
+impl From<f32> for Value {
+    fn from(value: f32) -> Self {
+        Value::Float(value)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Value::Double(value)
     }
 }
 

@@ -66,22 +66,80 @@ fn get_attr_lifetime(lifetime: &Lifetime) -> Attribute {
     )
 }
 
+fn get_value(expr: &Expr) -> Option<Value> {
+    match expr {
+        Expr::Array(array_expr) => {
+            let array_values = array_expr.elems.iter()
+                .map(|item_expr| get_value(item_expr).expect("Value of array can't be None"))
+                .collect();
+            Some(Value::Array(array_values))
+        }
+        Expr::Lit(lit_expr) => {
+            match &lit_expr.lit {
+                Lit::Str(str_lit) => Some(Value::String(str_lit.value())),
+                Lit::ByteStr(bstr_lit) => {
+                    Some(Value::Array(
+                        bstr_lit.value().iter().map(|&byte| Value::Byte(byte)).collect()
+                    ))
+                },
+                Lit::Byte(byte_lit) => Some(Value::Byte(byte_lit.value())),
+                Lit::Char(char_lit) => Some(Value::UInt(char_lit.value() as u32)),
+                Lit::Int(int_lit) => {
+                    Some(match int_lit.suffix() {
+                        "i8" => Value::SByte(int_lit.base10_parse().expect("Expected i8 value")),
+                        "u8" => Value::Byte(int_lit.base10_parse().expect("Expected u8 value")),
+                        "i16" => Value::Short(int_lit.base10_parse().expect("Expected i16 value")),
+                        "u16" => Value::UShort(int_lit.base10_parse().expect("Expected u16 value")),
+                        "u32" => Value::UInt(int_lit.base10_parse().expect("Expected u32 value")),
+                        "i64" => Value::Long(int_lit.base10_parse().expect("Expected i64 value")),
+                        "u64" => Value::ULong(int_lit.base10_parse().expect("Expected u64 value")),
+                        _ => Value::Int(int_lit.base10_parse().expect("Expected i32 value"))
+                    })
+                },
+                Lit::Float(float_lit) => {
+                    Some(match float_lit.suffix() {
+                        "f32" => Value::Float(float_lit.base10_parse().expect("Expected f32 value")),
+                        _ => Value::Double(float_lit.base10_parse().expect("Expected f64 value")),
+                    })
+                },
+                Lit::Bool(bool_lit) => Some(Value::Bool(bool_lit.value())),
+                _ => None
+            }
+        }
+        Expr::Paren(paren_expr) => {
+            get_value(&paren_expr.expr)
+        }
+        Expr::Struct(expr_struct) => {
+            let mut object = HashMap::with_capacity(expr_struct.fields.len());
+            for field in &expr_struct.fields {
+                match &field.member {
+                    Member::Named(named_field) => {
+                        object.insert(
+                            named_field.to_string(),
+                            Box::new(get_value(&field.expr).expect("Value of object's field can't be None"))
+                        );
+                    }
+                    Member::Unnamed(_) => {
+                        println!("[Warning] (tangara-gen::PackageGenerator) \
+                    Unnamed fields in struct expr doesn't supported");
+                        return None;
+                    }
+                }
+            }
+            Some(Value::Object(object))
+        }
+        _ => None
+    }
+}
+
 fn get_typeref(t: &Type) -> Option<(TypeRef, Vec<Attribute>)> {
     match t {
         Type::Array(array_type) => {
-            let arr_len = if let Expr::Lit(len_lit) = &array_type.len {
-                if let Lit::Int(len_lit_int) = &len_lit.lit {
-                    Value::UInt(len_lit_int.base10_parse::<u32>().expect("Array length must be u32"))
-                } else {
-                    panic!("Array length cannot be non-int literal")
-                }
-            } else {
-                panic!("Array length cannot be non-literal");
-            };
+            let arr_len = get_value(&array_type.len).expect("Array length value can't be None");
             let mut attrs = vec![Attribute(
                 TypeRef::from("Tangara.Metadata.ArraySize"), vec![arr_len]
             )];
-            let (array_type, mut arr_attrs) = get_typeref(&array_type.elem).expect("Array type cannot be None");
+            let (array_type, mut arr_attrs) = get_typeref(&array_type.elem).expect("Array type can't be None");
             attrs.append(&mut arr_attrs);
             Some((
                 TypeRef::Generic(
@@ -337,7 +395,8 @@ fn parse_generics<T: GenericsCollector + AttributeCollector>(builder: &mut T, ge
                 WherePredicate::Type(type_predicate) => {
                     if let Some((TypeRef::Name(type_name), _)) = get_typeref(&type_predicate.bounded_ty) {
                         parse_bounds(builder, type_name, &type_predicate.bounds);
-                    } else {
+                    }
+                    else {
                         panic!("Can't get TypeRef::Name from bounded type in 'where' clause");
                     }
                 }
@@ -365,8 +424,61 @@ impl PackageGenerator {
 
     fn parse_item(&mut self, item: &Item) {
         match item {
-            Item::Enum(_) => {
-                // TODO implement
+            Item::Enum(enum_item) => {
+                let enum_name = enum_item.ident.to_string();
+                let enum_vis = get_visibility(&enum_item.vis);
+                let is_enum_class = enum_item.variants.iter().any(|v| v.fields != Fields::Unit);
+                if is_enum_class {
+                    let mut builder = create_enum_class(self.package_builder.clone(), &enum_name);
+                    builder.set_visibility(enum_vis);
+                    parse_generics(&mut builder, &enum_item.generics);
+                    for variant in &enum_item.variants {
+                        let mut variant_builder = builder.variant(&variant.ident.to_string());
+                        // Count of fields
+                        let mut count = 0;
+                        for field in &variant.fields {
+                            let field_name = if let Some(field_ident) = &field.ident {
+                                field_ident.to_string()
+                            }
+                            else {
+                                format!("field{}", count)
+                            };
+                            let (field_type, field_attrs) = get_typeref(&field.ty)
+                                .expect("Field cannot have type None");
+                            let mut prop_builder = variant_builder.add_property(
+                                field_type,
+                                &field_name
+                            );
+                            for attr in field_attrs {
+                                prop_builder.add_attribute(attr);
+                            }
+                            let prop_vis = get_visibility(&field.vis);
+                            prop_builder.getter_visibility(prop_vis);
+                            prop_builder.setter_visibility(prop_vis);
+                            prop_builder.build();
+                            count += 1;
+                        }
+                        variant_builder.build();
+                    }
+                    builder.build();
+                }
+                else {
+                    let mut builder = create_enum(self.package_builder.clone(), &enum_name);
+                    builder.set_visibility(enum_vis);
+                    for variant in &enum_item.variants {
+                        let variant_name = variant.ident.to_string();
+                        if let Some((_, lit_value)) = &variant.discriminant {
+                            builder.variant_value(
+                                &variant_name,
+                                get_value(lit_value).expect("Value of enum must be parsable")
+                            );
+                        }
+                        else {
+                            builder.variant(&variant_name);
+                        }
+                    }
+                    builder.build();
+                }
             }
             Item::Impl(impl_item) => {
                 let mut for_name = None;
@@ -513,23 +625,29 @@ impl PackageGenerator {
                 parse_generics(class_builder, &struct_item.generics);
 
                 if generate_pub_fields {
+                    let mut count = 0;
                     for field in &struct_item.fields {
                         if let Visibility::Public(_) = field.vis {
-                            if let Some(field_ident) = &field.ident {
-                                let (field_type, field_attrs) = get_typeref(&field.ty)
-                                    .expect("Field cannot have type None");
-                                let mut prop_builder = class_builder.add_property(
-                                    field_type,
-                                    &field_ident.to_string()
-                                );
-                                for attr in field_attrs {
-                                    prop_builder.add_attribute(attr);
-                                }
-                                prop_builder.getter_visibility(TgVis::Public);
-                                prop_builder.setter_visibility(TgVis::Public);
-                                prop_builder.build();
+                            let field_name = if let Some(field_ident) = &field.ident {
+                                field_ident.to_string()
                             }
+                            else {
+                                format!("field{}", count)
+                            };
+                            let (field_type, field_attrs) = get_typeref(&field.ty)
+                                .expect("Field cannot have type None");
+                            let mut prop_builder = class_builder.add_property(
+                                field_type,
+                                &field_name
+                            );
+                            for attr in field_attrs {
+                                prop_builder.add_attribute(attr);
+                            }
+                            prop_builder.getter_visibility(TgVis::Public);
+                            prop_builder.setter_visibility(TgVis::Public);
+                            prop_builder.build();
                         }
+                        count += 1;
                     }
                 }
             }

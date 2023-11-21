@@ -103,6 +103,72 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "Tangara",
+      "name": "Property",
+      "id": 14442440088244735772,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Fn": [
+                  {
+                    "Name": "Ptr"
+                  },
+                  [
+                    {
+                      "Name": "Ptr"
+                    }
+                  ]
+                ]
+              },
+              "name": "getter",
+              "id": 18278891177158225869
+            },
+            {
+              "attrs": [],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Generic": [
+                  {
+                    "Name": "Option"
+                  },
+                  [
+                    {
+                      "Fn": [
+                        null,
+                        [
+                          {
+                            "Name": "Ptr"
+                          },
+                          {
+                            "Name": "Ptr"
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "name": "setter",
+              "id": 9297565244898655042
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
       "name": "FuncTable",
       "id": 13315287748342839472,
       "generics": [
@@ -326,156 +392,6 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "Tangara",
-      "name": "TypeTable",
-      "id": 15805489126155215399,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Class": [
-          true,
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
-                  },
-                  [
-                    {
-                      "String": "new"
-                    }
-                  ]
-                ]
-              ],
-              "vis": "Internal",
-              "args": []
-            }
-          ],
-          [],
-          [
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "add_type",
-              "id": 9515708672011284147,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "u64"
-                  },
-                  "id",
-                  "Default"
-                ]
-              ],
-              "return_type": {
-                "Name": "FuncTable"
-              }
-            },
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "get_type",
-              "id": 7569306663432790416,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "u64"
-                  },
-                  "id",
-                  "Default"
-                ]
-              ],
-              "return_type": {
-                "Name": "FuncTable"
-              }
-            }
-          ],
-          []
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "Tangara",
-      "name": "Property",
-      "id": 14442440088244735772,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          [
-            {
-              "attrs": [],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Fn": [
-                  {
-                    "Name": "Ptr"
-                  },
-                  [
-                    {
-                      "Name": "Ptr"
-                    }
-                  ]
-                ]
-              },
-              "name": "getter",
-              "id": 18278891177158225869
-            },
-            {
-              "attrs": [],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Generic": [
-                  {
-                    "Name": "Option"
-                  },
-                  [
-                    {
-                      "Fn": [
-                        null,
-                        [
-                          {
-                            "Name": "Ptr"
-                          },
-                          {
-                            "Name": "Ptr"
-                          }
-                        ]
-                      ]
-                    }
-                  ]
-                ]
-              },
-              "name": "setter",
-              "id": 9297565244898655042
-            }
-          ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "Tangara",
       "name": "Context",
       "id": 12490447094366545338,
       "generics": [
@@ -601,6 +517,90 @@
               "args": [],
               "return_type": {
                 "Name": "Context"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "Tangara",
+      "name": "TypeTable",
+      "id": 15805489126155215399,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Class": [
+          true,
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Internal",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "add_type",
+              "id": 9515708672011284147,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "FuncTable"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_type",
+              "id": 7569306663432790416,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "FuncTable"
               }
             }
           ],
