@@ -40,7 +40,8 @@
               "args": [],
               "return_type": {
                 "Name": "i32"
-              }
+              },
+              "kind": "Abstract"
             }
           ],
           []
@@ -256,7 +257,8 @@
                   "Default"
                 ]
               ],
-              "return_type": null
+              "return_type": null,
+              "kind": "Abstract"
             },
             {
               "attrs": [],
@@ -270,7 +272,8 @@
               "args": [],
               "return_type": {
                 "Name": "String"
-              }
+              },
+              "kind": "Abstract"
             }
           ],
           []
@@ -408,7 +411,8 @@
                   "Default"
                 ]
               ],
-              "return_type": null
+              "return_type": null,
+              "kind": "Default"
             },
             {
               "attrs": [],
@@ -422,7 +426,8 @@
               "args": [],
               "return_type": {
                 "Name": "String"
-              }
+              },
+              "kind": "Default"
             },
             {
               "attrs": [],
@@ -445,7 +450,8 @@
               ],
               "return_type": {
                 "Tuple": []
-              }
+              },
+              "kind": "Default"
             },
             {
               "attrs": [],
@@ -473,7 +479,8 @@
                   "Default"
                 ]
               ],
-              "return_type": null
+              "return_type": null,
+              "kind": "Default"
             },
             {
               "attrs": [],
@@ -487,7 +494,8 @@
               "args": [],
               "return_type": {
                 "Name": "str"
-              }
+              },
+              "kind": "Default"
             }
           ],
           [

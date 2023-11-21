@@ -1,8 +1,10 @@
+use std::collections::HashSet;
 use crate::builder::{AttributeCollector, generate_method_id, GenericsCollector};
-use crate::{Argument, ArgumentKind, Attribute, Generics, Method, TypeRef, Value, Visibility};
+use crate::{Argument, ArgumentKind, Attribute, Generics, Method, MethodKind, TypeRef, Value, Visibility};
 
 pub trait MethodCollector {
     fn get_default_visibility(&self) -> Visibility;
+    fn get_supported_kinds(&self) -> HashSet<MethodKind>;
     fn add_method(&mut self, method: Method);
 }
 
@@ -15,7 +17,8 @@ pub struct MethodBuilder<'a, T: MethodCollector> {
     args: Vec<Argument>,
     return_type: Option<TypeRef>,
     generics: Vec<String>,
-    generics_where: Vec<(String, TypeRef)>
+    generics_where: Vec<(String, TypeRef)>,
+    kind: MethodKind
 }
 
 impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
@@ -30,7 +33,8 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
             args: vec![],
             return_type: None,
             generics: vec![],
-            generics_where: vec![]
+            generics_where: vec![],
+            kind: MethodKind::Default
         }
     }
 
@@ -41,6 +45,15 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
 
     pub fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
         self.vis = vis;
+        self
+    }
+
+    /// Method will *panics* if your kind is not supported by type collecting this method.
+    pub fn set_kind(&mut self, kind: MethodKind) -> &mut Self {
+        if !self.builder.get_supported_kinds().contains(&kind) {
+            panic!("Kind {:?} doesn't supported by type collecting it", kind);
+        }
+        self.kind = kind;
         self
     }
 
@@ -98,6 +111,7 @@ impl<'a, T: MethodCollector> MethodBuilder<'a, T> {
             generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
             args: self.args.to_vec(),
             return_type: self.return_type.clone(),
+            kind: self.kind.clone()
         }
     }
     

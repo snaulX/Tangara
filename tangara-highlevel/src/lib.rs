@@ -7,7 +7,7 @@ pub mod builder;
 
 // Enums block
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum Visibility {
     Private,
     Public,
@@ -60,6 +60,19 @@ pub enum TypeKind {
     /// Data type that contains only data
     Struct(Vec<Constructor>, Vec<Property>),
     TypeAlias(Box<TypeRef>)
+}
+
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
+pub enum MethodKind {
+    /// Default method: with body, with `this`
+    Default,
+    /// Without body
+    Abstract,
+    /// With body but can be overrided from
+    Virtual,
+    /// With body but hasn't `this` field
+    Static
 }
 
 // TypeRef block
@@ -281,7 +294,6 @@ pub struct Property {
     pub id: u64
 }
 
-// TODO add static, abstract, virtual methods
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Method {
@@ -291,5 +303,6 @@ pub struct Method {
     pub id: u64,
     pub generics: Generics,
     pub args: Vec<Argument>,
-    pub return_type: Option<TypeRef>
+    pub return_type: Option<TypeRef>,
+    pub kind: MethodKind
 }

@@ -1,7 +1,8 @@
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::rc::Rc;
 use crate::builder::{generate_type_id, GenericsCollector, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Generics, Method, Property, Type, TypeRef, Visibility};
+use crate::{Attribute, Generics, Method, MethodKind, Property, Type, TypeRef, Visibility};
 use crate::builder::method_builder::{MethodBuilder, MethodCollector};
 use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
 use crate::TypeKind::Interface;
@@ -47,7 +48,9 @@ impl InterfaceBuilder {
     }
 
     pub fn add_method(&mut self, name: &str) -> MethodBuilder<Self> {
-        MethodBuilder::new(self, name)
+        let mut builder = MethodBuilder::new(self, name);
+        builder.set_kind(MethodKind::Abstract);
+        builder
     }
 }
 
@@ -129,6 +132,10 @@ impl PropertyCollector for InterfaceBuilder {
 impl MethodCollector for InterfaceBuilder {
     fn get_default_visibility(&self) -> Visibility {
         Visibility::Public
+    }
+
+    fn get_supported_kinds(&self) -> HashSet<MethodKind> {
+        HashSet::from([MethodKind::Abstract])
     }
 
     fn add_method(&mut self, method: Method) {

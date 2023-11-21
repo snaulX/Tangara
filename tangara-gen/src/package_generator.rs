@@ -7,7 +7,7 @@ use quote::ToTokens;
 use syn::*;
 use syn::punctuated::Punctuated;
 use tangara_highlevel::builder::*;
-use tangara_highlevel::{Attribute, Package, TypeKind, TypeRef, Value, Visibility as TgVis};
+use tangara_highlevel::{Attribute, MethodKind, Package, TypeKind, TypeRef, Value, Visibility as TgVis};
 
 pub struct Config {
     /// Names of traits which we **don't** need inherit from
@@ -573,18 +573,20 @@ impl PackageGenerator {
                                     parse_return_type(&mut fn_builder, &fn_sig.output);
 
                                     // Parse arguments
-                                    //let mut have_self = false;
+                                    let mut have_self = false;
                                     for arg in &fn_sig.inputs {
                                         match arg {
                                             FnArg::Receiver(_) => {
-                                                //have_self = true;
+                                                have_self = true;
                                             }
                                             FnArg::Typed(fn_arg) => {
                                                 parse_arg(&mut fn_builder, fn_arg);
                                             }
                                         }
                                     }
-                                    // TODO make function be static if haven't 'self' argument
+                                    if !have_self {
+                                        fn_builder.set_kind(MethodKind::Static);
+                                    }
 
                                     fn_builder.build();
                                 }
