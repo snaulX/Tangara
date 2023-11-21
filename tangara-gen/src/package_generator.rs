@@ -470,7 +470,7 @@ impl PackageGenerator {
                         if let Some((_, lit_value)) = &variant.discriminant {
                             builder.variant_value(
                                 &variant_name,
-                                get_value(lit_value).expect("Value of enum must be parsable")
+                                get_value(lit_value).expect("Value of enum cannot be None")
                             );
                         }
                         else {
@@ -706,6 +706,13 @@ impl PackageGenerator {
             }
             _ => {}
         }
+    }
+
+    /// Set full path of mod as namespace. Mod path must be `my_mod::extra` format.
+    /// If mod path was set earlier - it rewrites it.
+    pub fn set_mod(mut self, mod_path: &str) -> Self {
+        self.package_builder.borrow_mut().set_namespace(&mod_path.replace("::", "."));
+        self
     }
 
     pub fn parse_code(mut self, code: &str) -> Self {

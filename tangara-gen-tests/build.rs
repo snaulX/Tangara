@@ -14,9 +14,11 @@ fn main() {
     let pkg_json = serde_json::to_string_pretty(&pkg).expect("Convert tangara package to json");
     std::fs::write("refldata.json", pkg_json).expect("Error with writing to refldata.json");
 
-    let tangara = PackageGenerator::new("Tangara", Config::default())
+    let tangara = PackageGenerator::new("tangara", Config::default())
         .parse_file("../tangara/src/lib.rs")
+        .set_mod("tangara::context")
         .parse_file("../tangara/src/context.rs")
+        .set_mod("tangara::runtime")
         .parse_file("../tangara/src/runtime.rs")
         .generate();
     let tg_json = serde_json::to_string_pretty(&tangara).expect("Convert tangara package to json");

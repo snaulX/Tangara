@@ -10,6 +10,7 @@ pub struct InterfaceBuilder {
     builder: Rc<RefCell<PackageBuilder>>,
     attrs: Vec<Attribute>,
     name: String,
+    namespace: String,
     vis: Visibility,
     properties: Vec<Property>,
     methods: Vec<Method>,
@@ -20,11 +21,13 @@ pub struct InterfaceBuilder {
 
 impl InterfaceBuilder {
     pub fn new(builder: Rc<RefCell<PackageBuilder>>, name: &str) -> Self {
+        let namespace = builder.borrow().get_namespace();
         let vis = builder.borrow().type_visibility;
         Self {
             builder,
             attrs: vec![],
             name: name.to_string(),
+            namespace,
             vis,
             properties: vec![],
             methods: vec![],
@@ -60,7 +63,7 @@ impl TypeBuilder for InterfaceBuilder {
     }
 
     fn get_type(&self) -> Type {
-        let namespace = self.builder.borrow().namespace.clone();
+        let namespace = self.namespace.clone();
         let name = self.name.clone();
         let mut full_name = String::with_capacity(namespace.len() + name.len() + 1);
         full_name.push_str(&namespace);

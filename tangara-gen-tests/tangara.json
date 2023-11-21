@@ -11,15 +11,15 @@
       ]
     ]
   ],
-  "name": "Tangara",
-  "id": 4243534419063804238,
+  "name": "tangara",
+  "id": 15332026777329762613,
   "types": [
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "Tangara",
+      "namespace": "tangara.context",
       "name": "Ptr",
-      "id": 4547342381831130650,
+      "id": 1364909495332964813,
       "generics": [
         [],
         []
@@ -42,9 +42,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "Tangara",
+      "namespace": "tangara.context",
       "name": "FnDtor",
-      "id": 3639611440383007818,
+      "id": 2944451432946221147,
       "generics": [
         [],
         []
@@ -65,9 +65,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "Tangara",
+      "namespace": "tangara.context",
       "name": "Fn",
-      "id": 11862866527991483242,
+      "id": 17173818795485082850,
       "generics": [
         [],
         []
@@ -102,9 +102,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "Tangara",
+      "namespace": "tangara.context",
       "name": "Property",
-      "id": 14442440088244735772,
+      "id": 14514908730944683719,
       "generics": [
         [],
         []
@@ -168,9 +168,93 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "Tangara",
+      "namespace": "tangara.context",
+      "name": "Context",
+      "id": 1807611497243444177,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Class": [
+          true,
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Internal",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "add_package",
+              "id": 12359109620120953044,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "TypeTable"
+              }
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_package",
+              "id": 78053248962896222,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u64"
+                  },
+                  "id",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Name": "TypeTable"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "tangara.context",
       "name": "FuncTable",
-      "id": 13315287748342839472,
+      "id": 4495031427084170895,
       "generics": [
         [],
         []
@@ -391,145 +475,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "Tangara",
-      "name": "Context",
-      "id": 12490447094366545338,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Class": [
-          true,
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
-                  },
-                  [
-                    {
-                      "String": "new"
-                    }
-                  ]
-                ]
-              ],
-              "vis": "Internal",
-              "args": []
-            }
-          ],
-          [],
-          [
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "add_package",
-              "id": 12359109620120953044,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "u64"
-                  },
-                  "id",
-                  "Default"
-                ]
-              ],
-              "return_type": {
-                "Name": "TypeTable"
-              }
-            },
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "get_package",
-              "id": 78053248962896222,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "u64"
-                  },
-                  "id",
-                  "Default"
-                ]
-              ],
-              "return_type": {
-                "Name": "TypeTable"
-              }
-            }
-          ],
-          []
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "Tangara",
-      "name": "Runtime",
-      "id": 4288140446718285857,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Class": [
-          true,
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
-                  },
-                  [
-                    {
-                      "String": "new"
-                    }
-                  ]
-                ]
-              ],
-              "vis": "Public",
-              "args": []
-            }
-          ],
-          [],
-          [
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "use_context",
-              "id": 10327001465945502749,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [],
-              "return_type": {
-                "Name": "Context"
-              }
-            }
-          ],
-          []
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "Tangara",
+      "namespace": "tangara.context",
       "name": "TypeTable",
-      "id": 15805489126155215399,
+      "id": 13677306543002655914,
       "generics": [
         [],
         []
@@ -601,6 +549,58 @@
               ],
               "return_type": {
                 "Name": "FuncTable"
+              }
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "tangara.runtime",
+      "name": "Runtime",
+      "id": 8006159575325052238,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Class": [
+          true,
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Public",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "use_context",
+              "id": 10327001465945502749,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [],
+              "return_type": {
+                "Name": "Context"
               }
             }
           ],
