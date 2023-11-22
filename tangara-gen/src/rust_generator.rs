@@ -1,5 +1,5 @@
 use std::path::Path;
-use tangara_highlevel::{Package, Property, Type, TypeKind, TypeRef};
+use tangara_highlevel::{Argument, Constructor, Method, MethodKind, Package, Property, Type, TypeKind, TypeRef};
 use tangara_highlevel::Visibility as TgVis;
 use crate::RUST_STD_LIB;
 
@@ -71,26 +71,148 @@ impl EntrypointGenerator {
         vis == TgVis::Public || (self.config.enable_internal && vis == TgVis::Internal)
     }
 
+    fn get_type_name(&self, type_ref: &TypeRef) -> Option<String> {
+        if let TypeRef::Name(name) = type_ref {
+            Some(name.clone()) // TODO remake this so we can use not only name type references
+        } else {
+            None
+        }
+    }
+
+    /// `this` parameter - Some: we have `self` param,
+    /// `bool` inside it: is it mutable or not and `String` is name of type of `self`.
+    /// Returns code for body and names of args with comma separator
+    fn gen_args(&self, args: &[Argument], this: Option<(bool, String)>) -> (String, String) {
+        let mut args_code = String::new();
+        if this.is_some() || args.len() > 0 {
+            args_code.push_str(r#"
+        let args_slice = std::slice::from_raw_parts_mut(args, args_size);
+        let mut args_ptr = args_slice.as_mut_ptr();"#);
+        }
+        if let Some((this_mut, this_type)) = this {
+            let this_type_ptr = if this_mut {
+                format!("*mut {}", this_type)
+            } else {
+                format!("*const {}", this_type)
+            };
+            args_code.push_str(
+                &format!(r#"
+        let this: {} = *(args_ptr as *mut Ptr) as {};
+        args_ptr = args_ptr.add(std::mem::size_of::<{}>());"#,
+                         this_type_ptr, this_type_ptr, this_type_ptr)
+            );
+        }
+        let mut arg_names = vec![];
+        for arg in args {
+            let ref_prefix = if RUST_STD_LIB.is_reference(&arg.0) {
+                "&"
+            } else {
+                ""
+            }.to_string();
+            let arg_type = [
+                ref_prefix,
+                self.get_type_name(&arg.1).unwrap_or("<ERROR TYPE GENERATOR>".to_string())
+            ].concat();
+            let arg_type_ptr = if RUST_STD_LIB.is_mutable(&arg.0) {
+                format!("*mut {}", arg_type)
+            } else {
+                format!("*const {}", arg_type)
+            };
+            args_code.push_str(
+                &format!(r#"
+        let {}: {} = ptr::read(args_ptr as {});
+        args_ptr = args_ptr.add(std::mem::size_of::<{}>());"#,
+                         arg.2, arg_type, arg_type_ptr, arg_type)
+            );
+            arg_names.push(arg.2.clone());
+        }
+        (args_code, arg_names.join(", "))
+    }
+
     fn gen_dtor(&mut self, t: &Type) {
-        let generics_ref = &t.generics.0;
+        /*let generics_ref = &t.generics.0;
         let generics = if generics_ref.len() > 0{
             format!("<{}>", generics_ref.join(", "))
         } else {
             String::new()
-        };
+        };*/
         self.bindings_block.push_str(
             &format!(r#"
 pub extern "C" fn {}_dtor(value: Ptr) {{
     unsafe {{
         ptr::drop_in_place(value);
-        dealloc(value, Layout::new::<{}{}>());
+        dealloc(value, Layout::new::<{}>());
     }}
 }}
-"#, t.name, t.name, generics));
+"#, t.name, t.name));
 
         self.tgload_body.push_str(
             &format!("{}.set_dtor({}_dtor);\n", get_type_name(t), t.name)
         );
+    }
+
+    fn gen_ctor(&mut self, ctor: &Constructor, t: &Type, mut count: usize) {
+        if self.pass_vis(&ctor.vis) {
+            if let Some(fn_name) = RUST_STD_LIB.get_fn_name(&ctor.attrs) {
+                let ctor_name = format!("{}_ctor{}", t.name, count);
+                let (args_code, arg_names) = self.gen_args(&ctor.args, None);
+                let ctor_call = format!("{}::{}({})", t.name, fn_name, arg_names);
+                self.bindings_block.push_str(
+                    &format!(r#"
+pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
+    unsafe {{{}
+        let value = Box::new({});
+        Box::into_raw(value) as Ptr
+    }}
+}}
+"#, ctor_name, args_code, ctor_call));
+
+                self.tgload_body.push_str(
+                    &format!("{}.add_ctor({});\n", get_type_name(t), ctor_name)
+                );
+                count += 1;
+            }
+            else {
+                println!("[Warning] (tangara-gen::EntrypointGenerator) Bindings for constructors \
+                without 'ConstructorFnName' attribute can't be generated");
+            }
+        }
+    }
+
+    fn gen_method(&mut self, method: &Method, t: &Type) {
+        if self.pass_vis(&method.vis) {
+            let this_arg = match &method.kind {
+                MethodKind::Default => Some((RUST_STD_LIB.is_mutable(&method.attrs), t.name.clone())),
+                MethodKind::Static => None,
+                _ => {
+                    return;
+                }
+            };
+            let fn_name = format!("{}_{}", t.name, method.name);
+            let (args_code, arg_names) = self.gen_args(&method.args, this_arg.clone());
+            let fn_call = if this_arg.is_some() {
+                format!("(*this).{}({})", method.name, arg_names)
+            } else {
+                format!("{}::{}({})", t.name, method.name, arg_names)
+            };
+            let final_code = if method.return_type.is_some() {
+                format!("let to_return = Box::new({});\n\t\tBox::into_raw(to_return) as Ptr", fn_call)
+            } else {
+                format!("{};\n\t\tptr::null_mut()", fn_call)
+            };
+            self.bindings_block.push_str(
+                &format!(r#"
+pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
+    unsafe {{{}
+        {}
+    }}
+}}
+"#, fn_name, args_code, final_code));
+
+            self.tgload_body.push_str(
+                &format!("{}.add_method({}, {});\n", get_type_name(t), method.id, fn_name)
+            );
+        }
     }
 
     fn gen_property(&mut self, prop: &Property, t: &Type) {
@@ -121,11 +243,8 @@ pub extern "C" fn {}(this: Ptr) -> Ptr {{
                         format!("set_{}({})", prop.name, prop.name)
                     };
                     let setter_name = format!("{}_set_{}", t.name, prop.name);
-                    let prop_type = if let TypeRef::Name(name) = &prop.prop_type {
-                        name // TODO remake this so we can use not only name type references
-                    } else {
-                        "<ERROR TYPE GENERATOR>"
-                    };
+                    let prop_type = self.get_type_name(&prop.prop_type)
+                        .unwrap_or("<ERROR TYPE GENERATOR>".to_string());
                     self.bindings_block.push_str(
                         &format!(r#"
 pub extern "C" fn {}(this: Ptr, object: Ptr) {{
@@ -170,17 +289,30 @@ pub extern "C" fn {}(this: Ptr, object: Ptr) {{
                             &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
                         );
                         self.gen_dtor(&t);
+                        let count = 0usize;
+                        for ctor in ctors {
+                            self.gen_ctor(ctor, &t, count);
+                        }
                         for prop in props {
                             self.gen_property(prop, &t);
                         }
+                        for method in methods {
+                            self.gen_method(method, &t);
+                        }
                     }
-                    TypeKind::EnumClass(variants, methods) => {}
+                    TypeKind::EnumClass(variants, methods) => {
+                        // TODO
+                    }
                     TypeKind::Struct(ctors, props) => {
                         let type_name = get_type_name(&t);
                         self.tgload_body.push_str(
                             &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
                         );
                         self.gen_dtor(&t);
+                        let count = 0usize;
+                        for ctor in ctors {
+                            self.gen_ctor(ctor, &t, count);
+                        }
                         for prop in props {
                             self.gen_property(prop, &t);
                         }

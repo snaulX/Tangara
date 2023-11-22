@@ -568,18 +568,23 @@ impl PackageGenerator {
                                     parse_return_type(&mut fn_builder, &fn_sig.output);
 
                                     // Parse arguments
-                                    let mut have_self = false;
+                                    let mut self_mut = None;
                                     for arg in &fn_sig.inputs {
                                         match arg {
-                                            FnArg::Receiver(_) => {
-                                                have_self = true;
+                                            FnArg::Receiver(self_arg) => {
+                                                // TODO add checks on reference and Self types
+                                                self_mut = Some(self_arg.mutability.is_some());
                                             }
                                             FnArg::Typed(fn_arg) => {
                                                 parse_arg(&mut fn_builder, fn_arg);
                                             }
                                         }
                                     }
-                                    if !have_self {
+                                    if let Some(is_mut) = self_mut {
+                                        if is_mut {
+                                            fn_builder.add_attribute(RUST_STD_LIB.mutable_attribute());
+                                        }
+                                    } else {
                                         fn_builder.set_kind(MethodKind::Static);
                                     }
 

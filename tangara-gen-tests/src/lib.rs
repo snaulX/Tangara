@@ -61,23 +61,23 @@ impl MyTrait for MyStruct {
 }
 
 impl MyStruct {
-    pub(crate) fn new() -> Self {
+    pub fn new(name: &str) -> Self {
         Self {
-            name: "snaulX".to_string()
+            name: name.to_string()
         }
     }
 
-    pub(crate) fn repeat_name(&self, times: u32) -> () {
+    pub fn repeat_name(&self, times: u32) -> () {
         for _ in 0..times {
             println!("My name is {}", self.name);
         }
     }
 
-    pub(crate) fn set_name(&mut self, name: &str) {
+    pub fn set_name(&mut self, name: &str) {
         self.name = name.to_string();
     }
 
-    pub(crate) fn get_name(&self) -> &str {
+    pub fn get_name(&self) -> &str {
         &self.name
     }
 }

@@ -342,153 +342,6 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "MyPackage",
-      "name": "MyStruct",
-      "id": 7534407210518214439,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Class": [
-          true,
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Id": 3123590887528483941
-                  },
-                  [
-                    {
-                      "String": "new"
-                    }
-                  ]
-                ]
-              ],
-              "vis": "Internal",
-              "args": []
-            }
-          ],
-          [],
-          [
-            {
-              "attrs": [],
-              "vis": "Private",
-              "name": "foo",
-              "id": 13574490469189226774,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "String"
-                  },
-                  "a",
-                  "Default"
-                ]
-              ],
-              "return_type": null,
-              "kind": "Default"
-            },
-            {
-              "attrs": [],
-              "vis": "Private",
-              "name": "bar",
-              "id": 10297498164471647047,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [],
-              "return_type": {
-                "Name": "String"
-              },
-              "kind": "Default"
-            },
-            {
-              "attrs": [],
-              "vis": "Internal",
-              "name": "repeat_name",
-              "id": 17567713076779176127,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [],
-                  {
-                    "Name": "u32"
-                  },
-                  "times",
-                  "Default"
-                ]
-              ],
-              "return_type": {
-                "Tuple": []
-              },
-              "kind": "Default"
-            },
-            {
-              "attrs": [],
-              "vis": "Internal",
-              "name": "set_name",
-              "id": 1641961565049420977,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [
-                [
-                  [
-                    [
-                      {
-                        "Id": 8833536595084287073
-                      },
-                      []
-                    ]
-                  ],
-                  {
-                    "Name": "str"
-                  },
-                  "name",
-                  "Default"
-                ]
-              ],
-              "return_type": null,
-              "kind": "Default"
-            },
-            {
-              "attrs": [],
-              "vis": "Internal",
-              "name": "get_name",
-              "id": 552281434682100053,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [],
-              "return_type": {
-                "Name": "str"
-              },
-              "kind": "Default"
-            }
-          ],
-          [
-            {
-              "Name": "MyTrait"
-            }
-          ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
       "name": "TestStruct",
       "id": 16038391058121417372,
       "generics": [
@@ -543,6 +396,183 @@
         "Struct": [
           [],
           []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "MyStruct",
+      "id": 7534407210518214439,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Class": [
+          true,
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 3123590887528483941
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Public",
+              "args": [
+                [
+                  [
+                    [
+                      {
+                        "Id": 8833536595084287073
+                      },
+                      []
+                    ]
+                  ],
+                  {
+                    "Name": "str"
+                  },
+                  "name",
+                  "Default"
+                ]
+              ]
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 5347971963415449167
+                  },
+                  []
+                ]
+              ],
+              "vis": "Private",
+              "name": "foo",
+              "id": 13574490469189226774,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "String"
+                  },
+                  "a",
+                  "Default"
+                ]
+              ],
+              "return_type": null,
+              "kind": "Default"
+            },
+            {
+              "attrs": [],
+              "vis": "Private",
+              "name": "bar",
+              "id": 10297498164471647047,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [],
+              "return_type": {
+                "Name": "String"
+              },
+              "kind": "Default"
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "repeat_name",
+              "id": 17567713076779176127,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [],
+                  {
+                    "Name": "u32"
+                  },
+                  "times",
+                  "Default"
+                ]
+              ],
+              "return_type": {
+                "Tuple": []
+              },
+              "kind": "Default"
+            },
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 5347971963415449167
+                  },
+                  []
+                ]
+              ],
+              "vis": "Public",
+              "name": "set_name",
+              "id": 1641961565049420977,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [
+                [
+                  [
+                    [
+                      {
+                        "Id": 8833536595084287073
+                      },
+                      []
+                    ]
+                  ],
+                  {
+                    "Name": "str"
+                  },
+                  "name",
+                  "Default"
+                ]
+              ],
+              "return_type": null,
+              "kind": "Default"
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "get_name",
+              "id": 552281434682100053,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [],
+              "return_type": {
+                "Name": "str"
+              },
+              "kind": "Default"
+            }
+          ],
+          [
+            {
+              "Name": "MyTrait"
+            }
+          ]
         ]
       }
     }
