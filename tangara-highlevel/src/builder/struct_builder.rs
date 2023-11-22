@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::builder::{generate_type_id, GenericsCollector, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Constructor, Generics, Property, Type, TypeRef, Visibility};
-use crate::builder::constructor_builder::{ConstructorBuilder, ConstructorCollector};
-use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
+use crate::builder::{GenericsCollector, PackageBuilder, TypeBuilder};
+use crate::{Attribute, Constructor, generate_type_id, Generics, Property, Type, TypeRef, Visibility};
+use crate::builder::constructor_builder::*;
+use crate::builder::property_builder::*;
 use crate::TypeKind::Struct;
 
 pub struct StructBuilder {

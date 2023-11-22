@@ -1,8 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::{Argument, Attribute, Package, Type, TypeRef, Visibility};
-use xxhash_rust::const_xxh3::const_custom_default_secret;
-use xxhash_rust::xxh3::xxh3_64_with_secret;
+use crate::{Attribute, generate_package_id, Package, Type, TypeRef, Visibility};
 
 mod enum_builder;
 mod class_builder;
@@ -21,79 +19,6 @@ pub use crate::builder::struct_builder::*;
 pub use crate::builder::method_builder::*;
 pub use crate::builder::property_builder::*;
 pub use crate::builder::constructor_builder::*;
-
-const PACKAGE_SECRET: [u8; 192] = const_custom_default_secret(772);
-const TYPE_SECRET: [u8; 192] = const_custom_default_secret(4900);
-const MEMBER_SECRET: [u8; 192] = const_custom_default_secret(18257);
-
-/// Generate XXHash id for type with given name
-pub(crate) fn generate_type_id(name: &String) -> u64 {
-    xxh3_64_with_secret(name.as_bytes(), &TYPE_SECRET)
-}
-
-/// Generate XXHash id for property with given name
-pub(crate) fn generate_property_id(name: &String) -> u64 {
-    xxh3_64_with_secret(name.as_bytes(), &MEMBER_SECRET)
-}
-
-/// Generate vec of bytes made from type's id or collection of ids
-fn get_typeref_bytes(type_ref: &TypeRef) -> Vec<u8> {
-    match type_ref {
-        TypeRef::Name(name) => {
-            // NOTE: if name doesn't contains namespace (it would in most cases) it can get wrong id
-            generate_type_id(&name).to_be_bytes().to_vec()
-        }
-        TypeRef::Id(id) => {
-            id.to_be_bytes().to_vec()
-        }
-        TypeRef::Direct(t) => {
-            t.id.to_be_bytes().to_vec()
-        }
-        TypeRef::Generic(base_type, generics) => {
-            let mut bytes_slice = Vec::with_capacity(generics.len() + 2);
-            bytes_slice.push(vec![0]); // id of generic
-            bytes_slice.push(get_typeref_bytes(&base_type));
-            for g in generics {
-                bytes_slice.push(get_typeref_bytes(g));
-            }
-            bytes_slice.concat()
-        }
-        TypeRef::Tuple(types) => {
-            let mut bytes_slice = Vec::with_capacity(types.len() + 1);
-            bytes_slice.push(vec![1]); // id of tuple
-            for t in types {
-                bytes_slice.push(get_typeref_bytes(t));
-            }
-            bytes_slice.concat()
-        }
-        TypeRef::Fn(return_type, arg_types) => {
-            let ret_bytes = if let Some(ret_type) = return_type {
-                get_typeref_bytes(ret_type)
-            } else {
-                // empty u64 id with all 0es
-                vec![0u8; 8]
-            };
-            let mut bytes_slice = Vec::with_capacity(arg_types.len() + 2);
-            bytes_slice.push(vec![2]); // id of fn
-            bytes_slice.push(ret_bytes);
-            for t in arg_types {
-                bytes_slice.push(get_typeref_bytes(t));
-            }
-            bytes_slice.concat()
-        }
-    }
-}
-
-/// Generate XXHash id for method with given name
-pub(crate) fn generate_method_id(name: &String, args: &Vec<Argument>) -> u64 {
-    // What makes method unique? His name and types of his arguments
-    let mut args_bytes = vec![];
-    for arg in args {
-        let arg_slice = get_typeref_bytes(&arg.1);
-        args_bytes = [args_bytes, arg_slice].concat()
-    }
-    xxh3_64_with_secret([name.as_bytes(), args_bytes.as_slice()].concat().as_slice(), &MEMBER_SECRET)
-}
 
 pub trait TypeBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self;
@@ -171,7 +96,7 @@ impl PackageBuilder {
     }
 
     pub fn get_id(&self) -> u64 {
-        xxh3_64_with_secret(self.name.as_bytes(), &PACKAGE_SECRET)
+        generate_package_id(&self.name)
     }
 
     pub fn add_type(&mut self, t: Type) -> &mut Self {

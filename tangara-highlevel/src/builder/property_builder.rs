@@ -1,5 +1,5 @@
-use crate::builder::{AttributeCollector, generate_property_id};
-use crate::{Attribute, Property, TypeRef, Visibility};
+use crate::builder::AttributeCollector;
+use crate::{Attribute, generate_property_id, Property, TypeRef, Visibility};
 
 pub trait PropertyCollector {
     fn get_default_visibility(&self) -> Visibility;

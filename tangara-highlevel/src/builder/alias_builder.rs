@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::builder::{generate_type_id, GenericsCollector, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Generics, Type, TypeRef, Visibility};
+use crate::builder::{GenericsCollector, PackageBuilder, TypeBuilder};
+use crate::{Attribute, generate_type_id, Generics, Type, TypeRef, Visibility};
 use crate::TypeKind::TypeAlias;
 
 pub struct TypeAliasBuilder {

@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
-use crate::builder::{generate_type_id, GenericsCollector, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Constructor, Generics, Method, MethodKind, Property, Type, TypeRef, Visibility};
-use crate::builder::constructor_builder::{ConstructorBuilder, ConstructorCollector};
-use crate::builder::method_builder::{MethodBuilder, MethodCollector};
-use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
+use crate::builder::{GenericsCollector, PackageBuilder, TypeBuilder};
+use crate::*;
+use crate::builder::constructor_builder::*;
+use crate::builder::method_builder::*;
+use crate::builder::property_builder::*;
 use crate::TypeKind::Class;
 
 pub struct ClassBuilder {

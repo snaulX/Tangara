@@ -114,7 +114,14 @@
           [],
           [
             {
-              "attrs": [],
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.StructField"
+                  },
+                  []
+                ]
+              ],
               "getter_visibility": "Public",
               "setter_visibility": "Public",
               "prop_type": {
@@ -133,7 +140,14 @@
               "id": 18278891177158225869
             },
             {
-              "attrs": [],
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.StructField"
+                  },
+                  []
+                ]
+              ],
               "getter_visibility": "Public",
               "setter_visibility": "Public",
               "prop_type": {
@@ -329,59 +343,6 @@
               ],
               "return_type": {
                 "Name": "TypeTable"
-              },
-              "kind": "Default"
-            }
-          ],
-          []
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "tangara.runtime",
-      "name": "Runtime",
-      "id": 8006159575325052238,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Class": [
-          true,
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
-                  },
-                  [
-                    {
-                      "String": "new"
-                    }
-                  ]
-                ]
-              ],
-              "vis": "Public",
-              "args": []
-            }
-          ],
-          [],
-          [
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "use_context",
-              "id": 10327001465945502749,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [],
-              "return_type": {
-                "Name": "Context"
               },
               "kind": "Default"
             }
@@ -613,6 +574,59 @@
               ],
               "return_type": {
                 "Name": "Property"
+              },
+              "kind": "Default"
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "tangara.runtime",
+      "name": "Runtime",
+      "id": 8006159575325052238,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Class": [
+          true,
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                  },
+                  [
+                    {
+                      "String": "new"
+                    }
+                  ]
+                ]
+              ],
+              "vis": "Public",
+              "args": []
+            }
+          ],
+          [],
+          [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "use_context",
+              "id": 10327001465945502749,
+              "generics": [
+                [],
+                []
+              ],
+              "args": [],
+              "return_type": {
+                "Name": "Context"
               },
               "kind": "Default"
             }

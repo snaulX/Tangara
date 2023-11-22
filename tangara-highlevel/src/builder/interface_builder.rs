@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
-use crate::builder::{generate_type_id, GenericsCollector, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Generics, Method, MethodKind, Property, Type, TypeRef, Visibility};
+use crate::builder::{GenericsCollector, PackageBuilder, TypeBuilder};
+use crate::{Attribute, generate_type_id, Generics, Method, MethodKind, Property, Type, TypeRef, Visibility};
 use crate::builder::method_builder::{MethodBuilder, MethodCollector};
 use crate::builder::property_builder::{PropertyBuilder, PropertyCollector};
 use crate::TypeKind::Interface;

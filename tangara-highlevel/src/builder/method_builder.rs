@@ -1,6 +1,6 @@
 use std::collections::HashSet;
-use crate::builder::{AttributeCollector, generate_method_id, GenericsCollector};
-use crate::{Argument, ArgumentKind, Attribute, Generics, Method, MethodKind, TypeRef, Value, Visibility};
+use crate::builder::{AttributeCollector, GenericsCollector};
+use crate::*;
 
 pub trait MethodCollector {
     fn get_default_visibility(&self) -> Visibility;

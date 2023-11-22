@@ -2,22 +2,77 @@ use std::cell::RefCell;
 use std::ops::Deref;
 use std::path::Path;
 use std::rc::Rc;
+use once_cell::sync::Lazy;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{FnArg, ImplItem, Item, parse_file, Pat, PatType, ReturnType, Signature, Type, UseTree, Visibility};
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
-use tangara_highlevel::builder::PackageBuilder;
-use tangara_highlevel::Package;
+use tangara_highlevel::builder::{create_class, PackageBuilder, TypeBuilder};
+use tangara_highlevel::{Attribute, get_typeref_bytes, Package, TypeRef};
+use tangara_highlevel::Type as TgType;
 
 mod package_generator;
-pub use package_generator::*;
+mod rust_generator;
+
+pub use package_generator::PackageGenerator;
+pub use package_generator::Config as PkgGenConfig;
+pub use rust_generator::RustGenerator;
+pub use rust_generator::Config as RustGenConfig;
+
+pub(crate) static RUST_STD_LIB: Lazy<RustStdLib> = Lazy::new(|| RustStdLib::new());
+
+pub(crate) struct RustStdLib {
+    rust_std: Package,
+    mutable_attribute: TgType,
+    struct_field_attribute: TgType,
+}
+
+impl RustStdLib {
+    pub(crate) fn new() -> Self {
+        let mut rust_std = PackageBuilder::new("Tangara.Rust");
+        let mut struct_field_attribute = create_class(rust_std.clone(), "StructField");
+        let mut mutable_attribute = create_class(rust_std.clone(), "Mutable");
+
+        // Build classes
+        let struct_field_attribute = struct_field_attribute.build();
+        let mutable_attribute = mutable_attribute.build();
+        let rust_std = rust_std.borrow().build();
+
+        Self {
+            rust_std,
+            mutable_attribute,
+            struct_field_attribute
+        }
+    }
+
+    pub(crate) fn mutable_attribute(&self) -> Attribute {
+        Attribute(TypeRef::from(&self.mutable_attribute), vec![])
+    }
+
+    pub(crate) fn struct_field_attribute(&self) -> Attribute {
+        Attribute(TypeRef::from(&self.struct_field_attribute), vec![])
+    }
+
+    pub(crate) fn is_struct_field(&self, attrs: &[Attribute]) -> bool {
+        // Cache type data for comparing
+        let struct_field_data = get_typeref_bytes(&TypeRef::from(&self.struct_field_attribute));
+        attrs.iter().any(|attr| get_typeref_bytes(&attr.0) == struct_field_data)
+    }
+
+    pub(crate) fn is_mutable(&self, attrs: &[Attribute]) -> bool {
+        // Cache type data for comparing
+        let mutable_data = get_typeref_bytes(&TypeRef::from(&self.mutable_attribute));
+        attrs.iter().any(|attr| get_typeref_bytes(&attr.0) == mutable_data)
+    }
+}
+
+// Legacy code
 
 const TYPE_SECRET: [u8; 192] = const_custom_default_secret(4900);
 const FUNC_SECRET: [u8; 192] = const_custom_default_secret(18257);
 
 pub struct Generator {
-    // TODO: custom constructor function analogs
     generate_internal: bool,
     package_builder: Rc<RefCell<PackageBuilder>>,
     package_ident: Ident,

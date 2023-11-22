@@ -320,7 +320,14 @@
           [],
           [
             {
-              "attrs": [],
+              "attrs": [
+                [
+                  {
+                    "Name": "Tangara.Rust.StructField"
+                  },
+                  []
+                ]
+              ],
               "getter_visibility": "Public",
               "setter_visibility": "Public",
               "prop_type": {
@@ -330,32 +337,6 @@
               "id": 5824848936401749885
             }
           ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
-      "name": "GenericsTest",
-      "id": 10534664994700932592,
-      "generics": [
-        [
-          "T"
-        ],
-        [
-          [
-            "T",
-            {
-              "Name": "MyTrait"
-            }
-          ]
-        ]
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          []
         ]
       }
     },
@@ -503,6 +484,32 @@
               "Name": "MyTrait"
             }
           ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "GenericsTest",
+      "id": 10534664994700932592,
+      "generics": [
+        [
+          "T"
+        ],
+        [
+          [
+            "T",
+            {
+              "Name": "MyTrait"
+            }
+          ]
+        ]
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          []
         ]
       }
     }

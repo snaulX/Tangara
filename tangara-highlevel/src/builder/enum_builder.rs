@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::builder::{generate_type_id, GenericsCollector, PackageBuilder, PropertyBuilder, PropertyCollector, TypeBuilder};
-use crate::{Attribute, Generics, Method, Property, Type, TypeRef, Value, Visibility};
+use crate::builder::{GenericsCollector, PackageBuilder, PropertyBuilder, PropertyCollector, TypeBuilder};
+use crate::{Attribute, generate_type_id, Generics, Method, Property, Type, TypeRef, Value, Visibility};
 use crate::TypeKind::{Enum, EnumClass};
 
 pub struct EnumBuilder {

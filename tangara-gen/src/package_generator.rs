@@ -8,6 +8,7 @@ use syn::*;
 use syn::punctuated::Punctuated;
 use tangara_highlevel::builder::*;
 use tangara_highlevel::{Attribute, MethodKind, Package, TypeKind, TypeRef, Value, Visibility as TgVis};
+use crate::RUST_STD_LIB;
 
 pub struct Config {
     /// Names of traits which we **don't** need inherit from
@@ -228,7 +229,7 @@ fn get_typeref(t: &Type) -> Option<(TypeRef, Vec<Attribute>)> {
         Type::Ptr(ptr_type) => {
             let mut attrs = vec![];
             if ptr_type.mutability.is_some() {
-                attrs.push(Attribute(TypeRef::from("Tangara.Rust.Mutable"), vec![]))
+                attrs.push(RUST_STD_LIB.mutable_attribute())
             }
             let (ptr_typeref, mut ptr_attrs) = get_typeref(&ptr_type.elem).expect("Pointer type cannot be None");
             attrs.append(&mut ptr_attrs);
@@ -246,7 +247,7 @@ fn get_typeref(t: &Type) -> Option<(TypeRef, Vec<Attribute>)> {
                 attrs.push(get_attr_lifetime(lifetime));
             }
             if ref_type.mutability.is_some() {
-                attrs.push(Attribute(TypeRef::from("Tangara.Rust.Mutable"), vec![]))
+                attrs.push(RUST_STD_LIB.mutable_attribute())
             }
             let (ref_type, mut ref_attrs) = get_typeref(&ref_type.elem).expect("Reference type can't be None");
             attrs.append(&mut ref_attrs);
@@ -645,6 +646,7 @@ impl PackageGenerator {
                             for attr in field_attrs {
                                 prop_builder.add_attribute(attr);
                             }
+                            prop_builder.add_attribute(RUST_STD_LIB.struct_field_attribute());
                             prop_builder.getter_visibility(TgVis::Public);
                             prop_builder.setter_visibility(TgVis::Public);
                             prop_builder.build();
