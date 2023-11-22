@@ -61,10 +61,7 @@ fn get_visibility(vis: &Visibility) -> TgVis {
 }
 
 fn get_attr_lifetime(lifetime: &Lifetime) -> Attribute {
-    Attribute(
-        TypeRef::from("Tangara.Rust.Lifetime"),
-        vec![Value::String(lifetime.ident.to_string())]
-    )
+    RUST_STD_LIB.lifetime_attribute(&lifetime.ident.to_string())
 }
 
 fn get_value(expr: &Expr) -> Option<Value> {
@@ -242,7 +239,7 @@ fn get_typeref(t: &Type) -> Option<(TypeRef, Vec<Attribute>)> {
             ))
         },
         Type::Reference(ref_type) => {
-            let mut attrs = vec![Attribute(TypeRef::from("Tangara.Rust.Reference"), vec![])];
+            let mut attrs = vec![RUST_STD_LIB.reference_attribute()];
             if let Some(lifetime) = &ref_type.lifetime {
                 attrs.push(get_attr_lifetime(lifetime));
             }
@@ -358,10 +355,7 @@ fn parse_generics<T: GenericsCollector + AttributeCollector>(builder: &mut T, ge
                     // Add attribute to mark for Tangara that in Rust this generic has lifetime
                     let lt = lifetime.ident.to_string();
                     builder.add_attribute(
-                        Attribute(
-                            TypeRef::from("Tangara.Rust.LifetimeGeneric"),
-                            vec![Value::String(bounded.clone()), Value::String(lt)]
-                        )
+                        RUST_STD_LIB.lifetime_generic_attribute(&bounded, &lt)
                     );
                 }
                 _ => {}
@@ -450,6 +444,9 @@ impl PackageGenerator {
                                 field_type,
                                 &field_name
                             );
+                            if field.ident.is_none() {
+                                prop_builder.add_attribute(RUST_STD_LIB.tuple_field_attribute(count));
+                            }
                             for attr in field_attrs {
                                 prop_builder.add_attribute(attr);
                             }
@@ -512,10 +509,7 @@ impl PackageGenerator {
                                     let mut ctor_builder = cb.add_constructor();
                                     ctor_builder.set_visibility(get_visibility(&fn_item.vis));
                                     // Add attribute: name of 'fn' associated to this constructor
-                                    ctor_builder.add_attribute(Attribute(
-                                        TypeRef::from("Tangara.Rust.Metadata.ConstructorFnName"),
-                                        vec![Value::String(name.clone())]
-                                    ));
+                                    ctor_builder.add_attribute(RUST_STD_LIB.constructor_name_attribute(&name));
 
                                     // Check for generics emptiness
                                     if fn_sig.generics.params.len() > 0 {

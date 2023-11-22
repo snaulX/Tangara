@@ -1,5 +1,5 @@
 use std::path::Path;
-use tangara_highlevel::{Package, Property, Type, TypeKind};
+use tangara_highlevel::{Package, Property, Type, TypeKind, TypeRef};
 use tangara_highlevel::Visibility as TgVis;
 use crate::RUST_STD_LIB;
 
@@ -95,21 +95,60 @@ pub extern "C" fn {}_dtor(value: Ptr) {{
 
     fn gen_property(&mut self, prop: &Property, t: &Type) {
         if self.pass_vis(&prop.getter_visibility) {
-            let get_method = if RUST_STD_LIB.is_struct_field(&prop.attrs) {
+            let is_field = RUST_STD_LIB.is_struct_field(&prop.attrs);
+            let get_code = if is_field {
                 prop.name.clone()
             } else {
                 format!("get_{}()", prop.name)
             };
+            let getter_name = format!("{}_get_{}", t.name, prop.name);
             self.bindings_block.push_str(
                 &format!(r#"
-pub extern "C" fn {}_get_{}(this: Ptr) -> Ptr {{
+pub extern "C" fn {}(this: Ptr) -> Ptr {{
     unsafe {{
         let this: *const {} = this as *const {};
         let to_return = Box::new((*this).{});
         Box::into_raw(to_return) as Ptr
     }}
 }}
-"#, t.name, prop.name, t.name, t.name, get_method));
+"#, getter_name, t.name, t.name, get_code));
+
+            let setter = if let Some(setter_vis) = prop.setter_visibility {
+                if self.pass_vis(&setter_vis) {
+                    let set_code = if is_field {
+                        format!("{} = {}", prop.name, prop.name)
+                    } else {
+                        format!("set_{}({})", prop.name, prop.name)
+                    };
+                    let setter_name = format!("{}_set_{}", t.name, prop.name);
+                    let prop_type = if let TypeRef::Name(name) = &prop.prop_type {
+                        name // TODO remake this so we can use not only name type references
+                    } else {
+                        "<ERROR TYPE GENERATOR>"
+                    };
+                    self.bindings_block.push_str(
+                        &format!(r#"
+pub extern "C" fn {}(this: Ptr, object: Ptr) {{
+    unsafe {{
+        let this: *mut {} = this as *mut {};
+        let {}: {} = ptr::read(object as *const {});
+        (*this).{};
+    }}
+}}
+"#, setter_name, t.name, t.name, prop.name, prop_type, prop_type, set_code));
+                    format!("Some({})", setter_name)
+                }
+                else {
+                    "None".to_string()
+                }
+            } else {
+                "None".to_string()
+            };
+
+            self.tgload_body.push_str(
+                &format!("{}.add_property({}, Property {{ getter: {}, setter: {} }});\n",
+                get_type_name(t), prop.id, getter_name, setter)
+            );
         }
     }
 
@@ -160,7 +199,7 @@ pub extern "C" fn {}_get_{}(this: Ptr) -> Ptr {{
 // All changes in this file will discard after rebuilding project
 use std::ptr;
 use std::alloc::{dealloc, Layout};
-use tangara::context::{Context, Ptr};
+use tangara::context::{Context, Ptr, Property};
 "#.to_string();
         let mut tgload_body = self.tgload_body.replace("\n", "\n\t");
         tgload_body.remove(tgload_body.len() - 1); // remove last extra '\t'

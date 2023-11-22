@@ -86,7 +86,18 @@
               "Variant",
               [
                 {
-                  "attrs": [],
+                  "attrs": [
+                    [
+                      {
+                        "Id": 12438701424701908330
+                      },
+                      [
+                        {
+                          "UShort": 0
+                        }
+                      ]
+                    ]
+                  ],
                   "getter_visibility": "Private",
                   "setter_visibility": "Private",
                   "prop_type": {
@@ -156,7 +167,18 @@
               "Tuple",
               [
                 {
-                  "attrs": [],
+                  "attrs": [
+                    [
+                      {
+                        "Id": 12438701424701908330
+                      },
+                      [
+                        {
+                          "UShort": 0
+                        }
+                      ]
+                    ]
+                  ],
                   "getter_visibility": "Private",
                   "setter_visibility": "Private",
                   "prop_type": {
@@ -193,7 +215,18 @@
               "Tuple",
               [
                 {
-                  "attrs": [],
+                  "attrs": [
+                    [
+                      {
+                        "Id": 12438701424701908330
+                      },
+                      [
+                        {
+                          "UShort": 0
+                        }
+                      ]
+                    ]
+                  ],
                   "getter_visibility": "Private",
                   "setter_visibility": "Private",
                   "prop_type": {
@@ -309,41 +342,6 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "MyPackage",
-      "name": "TestStruct",
-      "id": 16038391058121417372,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Name": "Tangara.Rust.StructField"
-                  },
-                  []
-                ]
-              ],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Name": "u64"
-              },
-              "name": "id",
-              "id": 5824848936401749885
-            }
-          ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
       "name": "MyStruct",
       "id": 7534407210518214439,
       "generics": [
@@ -358,7 +356,7 @@
               "attrs": [
                 [
                   {
-                    "Name": "Tangara.Rust.Metadata.ConstructorFnName"
+                    "Id": 3123590887528483941
                   },
                   [
                     {
@@ -448,7 +446,7 @@
                   [
                     [
                       {
-                        "Name": "Tangara.Rust.Reference"
+                        "Id": 8833536595084287073
                       },
                       []
                     ]
@@ -482,6 +480,41 @@
           [
             {
               "Name": "MyTrait"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "TestStruct",
+      "id": 16038391058121417372,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 82866407975103055
+                  },
+                  []
+                ]
+              ],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Name": "u64"
+              },
+              "name": "id",
+              "id": 5824848936401749885
             }
           ]
         ]

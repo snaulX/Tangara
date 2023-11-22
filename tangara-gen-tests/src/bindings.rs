@@ -2,8 +2,15 @@
 // All changes in this file will discard after rebuilding project
 use std::ptr;
 use std::alloc::{dealloc, Layout};
-use tangara::context::{Context, Ptr};
+use tangara::context::{Context, Ptr, Property};
 use crate::*;
+
+pub extern "C" fn MyStruct_dtor(value: Ptr) {
+    unsafe {
+        ptr::drop_in_place(value);
+        dealloc(value, Layout::new::<MyStruct>());
+    }
+}
 
 pub extern "C" fn TestStruct_dtor(value: Ptr) {
     unsafe {
@@ -20,17 +27,19 @@ pub extern "C" fn TestStruct_get_id(this: Ptr) -> Ptr {
     }
 }
 
-pub extern "C" fn MyStruct_dtor(value: Ptr) {
+pub extern "C" fn TestStruct_set_id(this: Ptr, object: Ptr) {
     unsafe {
-        ptr::drop_in_place(value);
-        dealloc(value, Layout::new::<MyStruct>());
+        let this: *mut TestStruct = this as *mut TestStruct;
+        let id: u64 = ptr::read(object as *const u64);
+        (*this).id = id;
     }
 }
 #[no_mangle]
 pub extern "C" fn tgLoad(ctx: &mut Context) {
 	let mut MyPackage_package = ctx.add_package(15027680195549333245);
-	let mut TestStruct_type = MyPackage_package.add_type(16038391058121417372);
-	TestStruct_type.set_dtor(TestStruct_dtor);
 	let mut MyStruct_type = MyPackage_package.add_type(7534407210518214439);
 	MyStruct_type.set_dtor(MyStruct_dtor);
+	let mut TestStruct_type = MyPackage_package.add_type(16038391058121417372);
+	TestStruct_type.set_dtor(TestStruct_dtor);
+	TestStruct_type.add_property(5824848936401749885, Property { getter: TestStruct_get_id, setter: Some(TestStruct_set_id) });
 }
