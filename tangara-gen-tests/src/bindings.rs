@@ -5,29 +5,6 @@ use std::alloc::{dealloc, Layout};
 use tangara::context::{Context, Ptr, Property};
 use crate::*;
 
-pub extern "C" fn TestStruct_dtor(value: Ptr) {
-    unsafe {
-        ptr::drop_in_place(value);
-        dealloc(value, Layout::new::<TestStruct>());
-    }
-}
-
-pub extern "C" fn TestStruct_get_id(this: Ptr) -> Ptr {
-    unsafe {
-        let this: *const TestStruct = this as *const TestStruct;
-        let to_return = Box::new((*this).id);
-        Box::into_raw(to_return) as Ptr
-    }
-}
-
-pub extern "C" fn TestStruct_set_id(this: Ptr, object: Ptr) {
-    unsafe {
-        let this: *mut TestStruct = this as *mut TestStruct;
-        let id: u64 = ptr::read(object as *const u64);
-        (*this).id = id;
-    }
-}
-
 pub extern "C" fn MyStruct_dtor(value: Ptr) {
     unsafe {
         ptr::drop_in_place(value);
@@ -82,16 +59,39 @@ pub extern "C" fn MyStruct_get_name(args_size: usize, args: *mut u8) -> Ptr {
 		Box::into_raw(to_return) as Ptr
     }
 }
+
+pub extern "C" fn TestStruct_dtor(value: Ptr) {
+    unsafe {
+        ptr::drop_in_place(value);
+        dealloc(value, Layout::new::<TestStruct>());
+    }
+}
+
+pub extern "C" fn TestStruct_get_id(this: Ptr) -> Ptr {
+    unsafe {
+        let this: *const TestStruct = this as *const TestStruct;
+        let to_return = Box::new((*this).id);
+        Box::into_raw(to_return) as Ptr
+    }
+}
+
+pub extern "C" fn TestStruct_set_id(this: Ptr, object: Ptr) {
+    unsafe {
+        let this: *mut TestStruct = this as *mut TestStruct;
+        let id: u64 = ptr::read(object as *const u64);
+        (*this).id = id;
+    }
+}
 #[no_mangle]
 pub extern "C" fn tgLoad(ctx: &mut Context) {
 	let mut MyPackage_package = ctx.add_package(15027680195549333245);
-	let mut TestStruct_type = MyPackage_package.add_type(16038391058121417372);
-	TestStruct_type.set_dtor(TestStruct_dtor);
-	TestStruct_type.add_property(5824848936401749885, Property { getter: TestStruct_get_id, setter: Some(TestStruct_set_id) });
 	let mut MyStruct_type = MyPackage_package.add_type(7534407210518214439);
 	MyStruct_type.set_dtor(MyStruct_dtor);
 	MyStruct_type.add_ctor(MyStruct_ctor0);
 	MyStruct_type.add_method(17567713076779176127, MyStruct_repeat_name);
 	MyStruct_type.add_method(1641961565049420977, MyStruct_set_name);
 	MyStruct_type.add_method(552281434682100053, MyStruct_get_name);
+	let mut TestStruct_type = MyPackage_package.add_type(16038391058121417372);
+	TestStruct_type.set_dtor(TestStruct_dtor);
+	TestStruct_type.add_property(5824848936401749885, Property { getter: TestStruct_get_id, setter: Some(TestStruct_set_id) });
 }

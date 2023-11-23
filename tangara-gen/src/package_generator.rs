@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::path::Path;
 use std::rc::Rc;
-use quote::ToTokens;
 use syn::*;
 use syn::punctuated::Punctuated;
 use tangara_highlevel::builder::*;
@@ -45,15 +44,56 @@ pub struct PackageGenerator {
     structs: HashMap<String, ClassBuilder>
 }
 
+fn get_from_path(syn_path: &syn::Path) -> TypeRef {
+    let mut path = String::new();
+    let mut generics = vec![];
+    for seg in &syn_path.segments {
+        path.push_str(&seg.ident.to_string());
+        match &seg.arguments {
+            PathArguments::None => {}
+            PathArguments::AngleBracketed(angle) => {
+                for ga in &angle.args {
+                    match &ga {
+                        GenericArgument::Type(gt) => {
+                            generics.push(get_typeref(gt).expect("Generic type can't be None").0);
+                        }
+                        _ => {
+                            println!("[Warning] (tangara-gen::PackageGenerator) \
+                                                    Recursive generic arguments are not supported.");
+                        }
+                    }
+                }
+            }
+            PathArguments::Parenthesized(_) => {
+                println!("[Warning] (tangara-gen::PackageGenerator) \
+                                        Parenthesized generic arguments are not supported.");
+            }
+        }
+        path.push('.');
+    }
+    path.remove(path.len() - 1); // remove last '.'
+    if generics.len() > 0 {
+        TypeRef::Generic(Box::new(TypeRef::Name(path)), generics)
+    }
+    else {
+        TypeRef::Name(path)
+    }
+}
+
 fn get_visibility(vis: &Visibility) -> TgVis {
     match vis {
         Visibility::Public(_) => TgVis::Public,
         Visibility::Restricted(sub_vis) => {
-            let sub_vis_name = sub_vis.path.to_token_stream().to_string();
-            if sub_vis_name == "super" {
-                TgVis::Protected
-            } else {
-                TgVis::Internal
+            if let TypeRef::Name(sub_vis_name) = get_from_path(&sub_vis.path) {
+                if sub_vis_name == "super" {
+                    TgVis::Protected
+                } else {
+                    TgVis::Internal
+                }
+            }
+            else {
+                println!("[Warning] (tangara-gen::PackageGenerator) Strange visibility path. Set to Private");
+                TgVis::Private
             }
         }
         Visibility::Inherited => TgVis::Private
@@ -178,13 +218,8 @@ fn get_typeref(t: &Type) -> Option<(TypeRef, Vec<Attribute>)> {
             get_typeref(&paren_type.elem)
         },
         Type::Path(path_type) => {
-            let mut path = String::new();
-            for seg in &path_type.path.segments {
-                path.push_str(&seg.ident.to_string());
-                path.push('.');
-            }
-            path.remove(path.len() - 1); // remove last '.'
-            let typeref = TypeRef::Name(path);
+            let typeref = get_from_path(&path_type.path);
+            // TODO rework this code due get_from_path
             if let Some(last_seg) = &path_type.path.segments.last() {
                 match &last_seg.arguments {
                     PathArguments::None => {
@@ -314,42 +349,8 @@ fn parse_generics<T: GenericsCollector + AttributeCollector>(builder: &mut T, ge
         for bound in bounds {
             match bound {
                 TypeParamBound::Trait(trait_bound) => {
-                    let mut trait_name = String::new();
-                    for seg in &trait_bound.path.segments {
-                        trait_name.push_str(&seg.ident.to_string());
-                        match &seg.arguments {
-                            PathArguments::None => {}
-                            PathArguments::AngleBracketed(angle) => {
-                                trait_name.push('<');
-                                for ga in &angle.args {
-                                    match &ga {
-                                        GenericArgument::Type(gt) => {
-                                            trait_name.push_str(&gt.to_token_stream().to_string());
-                                            trait_name.push(',');
-                                        }
-                                        _ => {
-                                            println!("[Warning] (tangara-gen::PackageGenerator) \
-                                                    Recursive generic arguments are not supported.");
-                                        }
-                                    }
-                                }
-                                if angle.args.len() > 0 {
-                                    // Remove last extra ','
-                                    trait_name.remove(trait_name.len() - 1);
-                                }
-                                trait_name.push('>');
-                            }
-                            PathArguments::Parenthesized(_) => {
-                                println!("[Warning] (tangara-gen::PackageGenerator) \
-                                        Parenthesized generic arguments are not supported.");
-                            }
-                        }
-                        trait_name.push('.');
-                    }
-                    // Remove last extra '.'
-                    trait_name.remove(trait_name.len() - 1); // I hope segments wasn't empty...
-                    // Finally add bound
-                    generic_wheres.push((bounded.clone(), TypeRef::Name(trait_name)));
+                    let typeref_wheres = get_from_path(&trait_bound.path);
+                    generic_wheres.push((bounded.clone(), typeref_wheres));
                 }
                 TypeParamBound::Lifetime(lifetime) => {
                     // Add attribute to mark for Tangara that in Rust this generic has lifetime
@@ -479,10 +480,10 @@ impl PackageGenerator {
                 }
             }
             Item::Impl(impl_item) => {
-                let mut for_name = None;
+                let mut for_type = None;
                 // Check situation on 'impl Trait for Struct'
                 if let Some((_, type_name, _)) = &impl_item.trait_ {
-                    for_name = Some(type_name.to_token_stream().to_string());
+                    for_type = Some(get_from_path(type_name));
                 }
                 if let (TypeRef::Name(type_name), _) = get_typeref(&impl_item.self_ty)
                     .expect("Type in 'impl' cannot be None") {
@@ -490,11 +491,33 @@ impl PackageGenerator {
                     let dont_inherit_traits = self.config.dont_inherit_traits.to_vec();
 
                     let cb = self.get_or_create_struct(type_name.clone());
-                    if let Some(trait_name) = for_name {
+                    if let Some(trait_type) = for_type {
                         // Again, if impl is with trait, then we need to inherit class from it
                         // But if really needs to. Because some traits is not important to inherit from.
-                        if !dont_inherit_traits.contains(&trait_name) {
-                            cb.inherits(TypeRef::Name(trait_name));
+                        match &trait_type {
+                            TypeRef::Name(trait_name) => {
+                                if !dont_inherit_traits.contains(&trait_name) {
+                                    cb.inherits(trait_type);
+                                }
+                            }
+                            TypeRef::Generic(trait_type_owner, _) => {
+                                if let TypeRef::Name(trait_name) = trait_type_owner.deref() {
+                                    if !dont_inherit_traits.contains(&trait_name) {
+                                        cb.inherits(trait_type);
+                                    }
+                                }
+                                else {
+                                    println!("[Warning] (tangara-gen::PackageGenerator) TypeRef from \
+                                generic not supported in 'impl TRef<...> for T' statement. Inherit from \
+                                anyway.");
+                                    cb.inherits(trait_type);
+                                }
+                            }
+                            _ => {
+                                println!("[Warning] (tangara-gen::PackageGenerator) TypeRef not \
+                                supported in 'impl TRef for T' statement. Inherit from it anyway.");
+                                cb.inherits(trait_type);
+                            }
                         }
                     }
                     for item_impl in &impl_item.items {
@@ -522,11 +545,15 @@ impl PackageGenerator {
                                             panic!("Constructor can't return nothing");
                                         }
                                         ReturnType::Type(_, return_type_boxed) => {
-                                            let return_type = return_type_boxed.to_token_stream().to_string();
-                                            if return_type != "Self" &&
-                                                return_type != type_name {
-                                                panic!("Return type of constructor can't be not as type of impl: {} != {}",
-                                                       return_type, type_name);
+                                            if let TypeRef::Name(return_type) = get_typeref(return_type_boxed).expect("").0 {
+                                                if return_type != "Self" &&
+                                                    return_type != type_name {
+                                                    panic!("Return type of constructor can't be not as type of impl: {} != {}",
+                                                           return_type, type_name);
+                                                }
+                                            }
+                                            else {
+                                                panic!("Return type reference of constructor is not Name");
                                             }
                                         }
                                     }
@@ -683,12 +710,13 @@ impl PackageGenerator {
                                     }
                                 }
                             }
-                            if !have_self {
+                            if have_self {
+                                fn_builder.build();
+                            }
+                            else {
                                 println!("[Warning] (tangara-gen::PackageGenerator) Trait \
                                  (interface) method must have 'self' argument. Ignoring it.");
                             }
-
-                            fn_builder.build();
                         }
                         TraitItem::Type(_) => {} // TODO add checks in typeref making in function (return or args) on this type
                         _ => {}

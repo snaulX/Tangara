@@ -27,23 +27,7 @@
       "kind": {
         "Interface": [
           [],
-          [
-            {
-              "attrs": [],
-              "vis": "Public",
-              "name": "kekov",
-              "id": 9868880391107710744,
-              "generics": [
-                [],
-                []
-              ],
-              "args": [],
-              "return_type": {
-                "Name": "i32"
-              },
-              "kind": "Abstract"
-            }
-          ],
+          [],
           []
         ]
       }
@@ -327,7 +311,16 @@
         "TypeAlias": {
           "Generic": [
             {
-              "Name": "Box"
+              "Generic": [
+                {
+                  "Name": "Box"
+                },
+                [
+                  {
+                    "Name": "str"
+                  }
+                ]
+              ]
             },
             [
               {
@@ -336,67 +329,6 @@
             ]
           ]
         }
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
-      "name": "TestStruct",
-      "id": 16038391058121417372,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Id": 82866407975103055
-                  },
-                  []
-                ]
-              ],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Name": "u64"
-              },
-              "name": "id",
-              "id": 5824848936401749885
-            }
-          ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
-      "name": "GenericsTest",
-      "id": 10534664994700932592,
-      "generics": [
-        [
-          "T"
-        ],
-        [
-          [
-            "T",
-            {
-              "Name": "MyTrait"
-            }
-          ]
-        ]
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          []
-        ]
       }
     },
     {
@@ -571,6 +503,67 @@
           [
             {
               "Name": "MyTrait"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "GenericsTest",
+      "id": 10534664994700932592,
+      "generics": [
+        [
+          "T"
+        ],
+        [
+          [
+            "T",
+            {
+              "Name": "MyTrait"
+            }
+          ]
+        ]
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "TestStruct",
+      "id": 16038391058121417372,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 82866407975103055
+                  },
+                  []
+                ]
+              ],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Name": "u64"
+              },
+              "name": "id",
+              "id": 5824848936401749885
             }
           ]
         ]
