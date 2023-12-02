@@ -66,9 +66,19 @@
       "kind": {
         "EnumClass": [
           [
-            [
-              "Variant",
-              [
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 17913170523427411699
+                  },
+                  []
+                ]
+              ],
+              "vis": "Public",
+              "name": "Variant",
+              "id": 837492378273562681,
+              "props": [
                 {
                   "attrs": [
                     [
@@ -91,7 +101,7 @@
                   "id": 16576852482574640428
                 }
               ]
-            ]
+            }
           ],
           []
         ]
@@ -110,9 +120,12 @@
       "kind": {
         "EnumClass": [
           [
-            [
-              "Variant",
-              [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "Variant",
+              "id": 837492378273562681,
+              "props": [
                 {
                   "attrs": [],
                   "getter_visibility": "Private",
@@ -124,7 +137,7 @@
                   "id": 1784559676337384610
                 }
               ]
-            ]
+            }
           ],
           []
         ]
@@ -132,7 +145,7 @@
     },
     {
       "attrs": [],
-      "vis": "Private",
+      "vis": "Public",
       "namespace": "MyPackage",
       "name": "EnumMixed",
       "id": 5083507064775102309,
@@ -143,13 +156,26 @@
       "kind": {
         "EnumClass": [
           [
-            [
-              "Unit",
-              []
-            ],
-            [
-              "Tuple",
-              [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "Unit",
+              "id": 9260626685794967516,
+              "props": []
+            },
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 17913170523427411699
+                  },
+                  []
+                ]
+              ],
+              "vis": "Public",
+              "name": "Tuple",
+              "id": 8975276260061643599,
+              "props": [
                 {
                   "attrs": [
                     [
@@ -172,7 +198,7 @@
                   "id": 16576852482574640428
                 }
               ]
-            ]
+            }
           ],
           []
         ]
@@ -180,7 +206,7 @@
     },
     {
       "attrs": [],
-      "vis": "Private",
+      "vis": "Public",
       "namespace": "MyPackage",
       "name": "EnumComplex",
       "id": 4724787910385973656,
@@ -191,13 +217,26 @@
       "kind": {
         "EnumClass": [
           [
-            [
-              "Unit",
-              []
-            ],
-            [
-              "Tuple",
-              [
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "Unit",
+              "id": 9260626685794967516,
+              "props": []
+            },
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 17913170523427411699
+                  },
+                  []
+                ]
+              ],
+              "vis": "Public",
+              "name": "Tuple",
+              "id": 8975276260061643599,
+              "props": [
                 {
                   "attrs": [
                     [
@@ -220,10 +259,13 @@
                   "id": 16576852482574640428
                 }
               ]
-            ],
-            [
-              "Struct",
-              [
+            },
+            {
+              "attrs": [],
+              "vis": "Public",
+              "name": "Struct",
+              "id": 12225383099421259715,
+              "props": [
                 {
                   "attrs": [],
                   "getter_visibility": "Private",
@@ -235,7 +277,7 @@
                   "id": 1784559676337384610
                 }
               ]
-            ]
+            }
           ],
           []
         ]
@@ -329,6 +371,41 @@
             ]
           ]
         }
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyPackage",
+      "name": "TestStruct",
+      "id": 16038391058121417372,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 82866407975103055
+                  },
+                  []
+                ]
+              ],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Name": "u64"
+              },
+              "name": "id",
+              "id": 5824848936401749885
+            }
+          ]
+        ]
       }
     },
     {
@@ -531,41 +608,6 @@
         "Struct": [
           [],
           []
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
-      "name": "TestStruct",
-      "id": 16038391058121417372,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Id": 82866407975103055
-                  },
-                  []
-                ]
-              ],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Name": "u64"
-              },
-              "name": "id",
-              "id": 5824848936401749885
-            }
-          ]
         ]
       }
     }

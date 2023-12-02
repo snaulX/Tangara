@@ -18,12 +18,12 @@ pub enum EnumStruct {
     }
 }
 
-enum EnumMixed {
+pub enum EnumMixed {
     Unit,
     Tuple(i32)
 }
 
-enum EnumComplex {
+pub enum EnumComplex {
     Unit,
     Tuple(i32),
     Struct {

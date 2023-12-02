@@ -432,6 +432,9 @@ impl PackageGenerator {
                         let mut variant_builder = builder.variant(&variant.ident.to_string());
                         // Count of fields
                         let mut count = 0;
+                        if let Fields::Unnamed(_) = &variant.fields {
+                            variant_builder.add_attribute(RUST_STD_LIB.tuple_variant_attribute());
+                        }
                         for field in &variant.fields {
                             let field_name = if let Some(field_ident) = &field.ident {
                                 field_ident.to_string()

@@ -58,9 +58,13 @@ impl<T: TypeBuilder> AttributeCollector for T {
 pub struct PackageBuilder {
     name: String,
     namespace: String,
+    /// Default visibility for types
     pub type_visibility: Visibility,
+    /// Default visibility for constructors
     pub constructor_visibility: Visibility,
-    pub property_visibility: Visibility,
+    /// Default visibility for properties/variants
+    pub member_visibility: Visibility,
+    /// Default visibility for methods
     pub method_visibility: Visibility,
     attrs: Vec<Attribute>,
     types: Vec<Type>
@@ -74,7 +78,7 @@ impl PackageBuilder {
                 namespace: name.to_string(),
                 type_visibility: Visibility::Public,
                 constructor_visibility: Visibility::Public,
-                property_visibility: Visibility::Public,
+                member_visibility: Visibility::Public,
                 method_visibility: Visibility::Public,
                 attrs: vec![],
                 types: vec![]

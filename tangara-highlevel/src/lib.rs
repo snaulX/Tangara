@@ -47,7 +47,7 @@ pub enum TypeKind {
     ),
     EnumClass(
         /// Variants: Name(Properties)
-        Vec<(String, Vec<Property>)>,
+        Vec<Variant>,
         /// Methods
         Vec<Method>
     ),
@@ -103,8 +103,8 @@ pub fn generate_type_id(name: &str) -> u64 {
     xxh3_64_with_secret(name.as_bytes(), &TYPE_SECRET)
 }
 
-/// Generate XXHash id for property with given name
-pub fn generate_property_id(name: &str) -> u64 {
+/// Generate XXHash id for property/variant with given name
+pub fn generate_member_id(name: &str) -> u64 {
     xxh3_64_with_secret(name.as_bytes(), &MEMBER_SECRET)
 }
 
@@ -315,6 +315,12 @@ impl From<&str> for Value {
     }
 }
 
+impl From<Property> for Argument {
+    fn from(value: Property) -> Self {
+        Argument(value.attrs, value.prop_type, value.name, ArgumentKind::Default)
+    }
+}
+
 // Structs block
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
@@ -387,4 +393,14 @@ pub struct Method {
     pub args: Vec<Argument>,
     pub return_type: Option<TypeRef>,
     pub kind: MethodKind
+}
+
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
+pub struct Variant {
+    pub attrs: Vec<Attribute>,
+    pub vis: Visibility,
+    pub name: String,
+    pub id: u64,
+    pub props: Vec<Property>
 }

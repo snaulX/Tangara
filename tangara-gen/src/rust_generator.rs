@@ -1,5 +1,5 @@
 use std::path::Path;
-use tangara_highlevel::{Argument, Constructor, Method, MethodKind, Package, Property, Type, TypeKind, TypeRef};
+use tangara_highlevel::{Argument, ArgumentKind, Constructor, Method, MethodKind, Package, Property, Type, TypeKind, TypeRef, Variant};
 use tangara_highlevel::Visibility as TgVis;
 use crate::RUST_STD_LIB;
 
@@ -271,6 +271,43 @@ pub extern "C" fn {}(this: Ptr, object: Ptr) {{
         }
     }
 
+    fn gen_variant(&mut self, variant: &Variant, t: &Type) {
+        if self.pass_vis(&variant.vis) {
+            let fn_name = format!("{}_{}", t.name, variant.name);
+
+            // Translate properties into arguments
+            let mut args = vec![];
+            for v_prop in &variant.props {
+                args.push(Argument::from(v_prop.clone()))
+            }
+
+            let (enum_variant, args_code) = if args.len() > 0 {
+                let (args_code, arg_names) = self.gen_args(&args, None);
+                if RUST_STD_LIB.is_tuple_variant(&variant.attrs) {
+                    (format!("{}::{}({})", t.name, variant.name, arg_names), args_code)
+                } else {
+                    (format!("{}::{} {{ {} }}", t.name, variant.name, arg_names), args_code)
+                }
+            } else {
+                (format!("{}::{}", t.name, variant.name), String::new())
+            };
+            let final_code = format!("let return_value = Box::new({});\n\t\tBox::into_raw(return_value) as Ptr",
+                                     enum_variant);
+            self.bindings_block.push_str(
+                &format!(r#"
+pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
+    unsafe {{{}
+        {}
+    }}
+}}
+"#, fn_name, args_code, final_code));
+
+            self.tgload_body.push_str(
+                &format!("{}.add_method({}, {});\n", get_type_name(t), variant.id, fn_name)
+            );
+        }
+    }
+
     fn generate(&mut self) {
         self.tgload_body.push_str(
             &format!("let mut {} = ctx.add_package({});\n", self.package_name, self.package.id)
@@ -301,7 +338,17 @@ pub extern "C" fn {}(this: Ptr, object: Ptr) {{
                         }
                     }
                     TypeKind::EnumClass(variants, methods) => {
-                        // TODO
+                        let type_name = get_type_name(&t);
+                        self.tgload_body.push_str(
+                            &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
+                        );
+                        self.gen_dtor(&t);
+                        for variant in variants {
+                            self.gen_variant(variant, &t);
+                        }
+                        for method in methods {
+                            self.gen_method(method, &t);
+                        }
                     }
                     TypeKind::Struct(ctors, props) => {
                         let type_name = get_type_name(&t);

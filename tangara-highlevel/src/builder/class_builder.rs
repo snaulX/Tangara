@@ -142,7 +142,7 @@ impl ConstructorCollector for ClassBuilder {
 
 impl PropertyCollector for ClassBuilder {
     fn get_default_visibility(&self) -> Visibility {
-        self.builder.borrow().property_visibility
+        self.builder.borrow().member_visibility
     }
 
     fn add_property(&mut self, property: Property) {

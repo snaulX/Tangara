@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::builder::{GenericsCollector, PackageBuilder, PropertyBuilder, PropertyCollector, TypeBuilder};
-use crate::{Attribute, generate_type_id, Generics, Method, Property, Type, TypeRef, Value, Visibility};
+use crate::builder::{AttributeCollector, GenericsCollector, PackageBuilder, PropertyBuilder, PropertyCollector, TypeBuilder};
+use crate::{Attribute, generate_member_id, generate_type_id, Generics, Method, Property, Type, TypeRef, Value, Variant, Visibility};
 use crate::TypeKind::{Enum, EnumClass};
 
 pub struct EnumBuilder {
@@ -144,7 +144,7 @@ pub struct EnumClassBuilder {
     name: String,
     namespace: String,
     vis: Visibility,
-    variants: Vec<(String, Vec<Property>)>,
+    variants: Vec<Variant>,
     methods: Vec<Method>,
     generics: Vec<String>,
     generics_where: Vec<(String, TypeRef)>,
@@ -233,17 +233,27 @@ impl GenericsCollector for EnumClassBuilder {
 /// Do not use separate from `EnumClassBuilder`.
 pub struct VariantBuilder<'a> {
     builder: &'a mut EnumClassBuilder,
+    attrs: Vec<Attribute>,
+    vis: Visibility,
     name: String,
     properties: Vec<Property>
 }
 
 impl<'a> VariantBuilder<'a> {
     pub(crate) fn new(builder: &'a mut EnumClassBuilder, name: &str) -> Self {
+        let vis = builder.builder.borrow().member_visibility;
         Self {
             builder,
+            attrs: vec![],
+            vis,
             name: name.to_string(),
             properties: vec![]
         }
+    }
+
+    fn set_visibility(&mut self, vis: Visibility) -> &mut Self {
+        self.vis = vis;
+        self
     }
 
     pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
@@ -251,17 +261,30 @@ impl<'a> VariantBuilder<'a> {
     }
 
     pub fn build(self) -> &'a mut EnumClassBuilder {
-        self.builder.variants.push((self.name, self.properties));
+        self.builder.variants.push(Variant {
+            attrs: self.attrs,
+            vis: self.vis,
+            name: self.name.clone(),
+            id: generate_member_id(&self.name),
+            props: self.properties,
+        });
         self.builder
     }
 }
 
 impl<'a> PropertyCollector for VariantBuilder<'a> {
     fn get_default_visibility(&self) -> Visibility {
-        self.builder.builder.borrow().property_visibility
+        self.builder.builder.borrow().member_visibility
     }
 
     fn add_property(&mut self, property: Property) {
         self.properties.push(property);
+    }
+}
+
+impl<'a> AttributeCollector for VariantBuilder<'a> {
+    fn add_attribute(&mut self, attribute: Attribute) -> &mut Self {
+        self.attrs.push(attribute);
+        self
     }
 }

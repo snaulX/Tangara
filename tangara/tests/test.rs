@@ -3,6 +3,11 @@ use std::ptr;
 use tangara::context::{Property, Ptr};
 use tangara::runtime::Runtime;
 
+enum MyEnum {
+    Unit,
+    Vec3(f32, f32, f32)
+}
+
 struct MyStruct {
     name: String
 }
@@ -26,6 +31,29 @@ impl MyStruct {
 
     pub(crate) fn get_name(&self) -> &str {
         &self.name
+    }
+}
+
+extern "C" fn MyEnum_Unit(_: usize, _: *mut u8) -> *mut u8 {
+    let value = Box::new(MyEnum::Unit);
+    Box::into_raw(value) as *mut u8
+}
+
+extern "C" fn MyEnum_Vec3(args_size: usize, args: *mut u8) -> *mut u8 {
+    unsafe {
+        let args_slice = std::slice::from_raw_parts_mut(args, args_size);
+        let value1: f32 = ptr::read(args_slice.as_mut_ptr() as *const f32);
+        let value2: f32 = ptr::read(args_slice.as_mut_ptr().add(std::mem::size_of::<*const f32>()) as *const f32);
+        let value3: f32 = ptr::read(args_slice.as_mut_ptr().add(2*std::mem::size_of::<*const f32>()) as *const f32);
+        let value = Box::new(MyEnum::Vec3(value1, value2, value3));
+        Box::into_raw(value) as *mut u8
+    }
+}
+
+extern "C" fn MyEnum_dtor(value: Ptr) {
+    unsafe {
+        ptr::drop_in_place(value);
+        dealloc(value, Layout::new::<MyEnum>());
     }
 }
 
@@ -82,6 +110,10 @@ fn it_works() {
             getter: MyStruct_get_name,
             setter: Some(MyStruct_set_name)
         });
+        let mut MyEnum_type = my_pkg.add_type(1);
+        MyEnum_type.set_dtor(MyEnum_dtor);
+        MyEnum_type.add_method(0, MyEnum_Unit);
+        MyEnum_type.add_method(1, MyEnum_Vec3);
     }
     {
         // Access what we need
