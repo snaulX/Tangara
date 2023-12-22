@@ -1,7 +1,6 @@
 [package]
 authors = [
-    "Alexander Gunger <alexandergunger666@gmail.com>",
-    "Wings Studio"
+    "Alexander Gunger <alexandergunger666@gmail.com>"
 ]
 description = "Library for helping with interop between languages"
 keywords = ["ffi", "tangara"]

@@ -4,6 +4,7 @@ use tangara_highlevel::builder::{create_class, PackageBuilder, TypeBuilder};
 
 mod package_generator;
 mod rust_generator;
+mod entrypoint_generator;
 
 pub use package_generator::PackageGenerator;
 pub use package_generator::Config as PkgGenConfig;

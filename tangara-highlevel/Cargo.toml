@@ -1,7 +1,6 @@
 [package]
 authors = [
-    "Alexander Gunger <alexandergunger666@gmail.com>",
-    "Wings Studio"
+    "Alexander Gunger <alexandergunger666@gmail.com>"
 ]
 description = "Generate & manipulate high-level bindings for Tangara"
 keywords = ["ffi", "tangara"]
@@ -13,7 +12,7 @@ repository = "https://github.com/wings-studio/Tangara"
 
 [dependencies]
 serde = { version = "1.0", optional = true, features = ["derive"] }
-xxhash-rust = { version = "0.8.7", optional = true, features = ["xxh3", "const_xxh3"] }
+xxhash-rust = { version = "0.8.8", optional = true, features = ["xxh3", "const_xxh3"] }
 
 [features]
 default = []

@@ -1,7 +1,6 @@
 [package]
 authors = [
-    "Alexander Gunger <alexandergunger666@gmail.com>",
-    "Wings Studio"
+    "Alexander Gunger <alexandergunger666@gmail.com>"
 ]
 description = "Generate bindings for Tangara"
 keywords = ["ffi", "tangara"]

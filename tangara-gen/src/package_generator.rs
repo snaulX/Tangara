@@ -627,7 +627,7 @@ impl PackageGenerator {
                     }
                 } // if let TypeRef::Name(type_name) = get_typeref(&impl_item.self_ty)
                 else {
-                    panic!("TypeRef from 'impl' root must be Name");
+                    println!("[Warning] (tangara-gen::PackageGenerator) TypeRef from 'impl' root must be Name");
                 }
             }
             Item::Mod(mod_item) => {
