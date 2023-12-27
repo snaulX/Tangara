@@ -1,5 +1,6 @@
 use tangara_highlevel::Package;
 use crate::entrypoint_generator::EntrypointGenerator;
+use crate::source_generator::SourceGenerator;
 
 pub struct Config {
     /// Enable generation of internal types and members.
@@ -30,5 +31,9 @@ impl RustGenerator {
 
     pub fn generate_entrypoint(mut self) -> EntrypointGenerator {
         EntrypointGenerator::new(self.package, self.config)
+    }
+
+    pub fn generate_bindings(mut self) -> SourceGenerator {
+        SourceGenerator::new(self.package, self.config)
     }
 }

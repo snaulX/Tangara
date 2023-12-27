@@ -2,13 +2,14 @@
 <module type="EMPTY_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/tangara-gen-tests/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tangara-gen-tests/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/tangara/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tangara/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/tangara-gen/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tangara-highlevel/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tangara-highlevel/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/tangara-gen-tests/myhost/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/tangara-gen-tests/mylib/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

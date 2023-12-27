@@ -284,6 +284,7 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
         for t in types {
             if t.generics.0.len() > 0 {
                 // while we cannot handle generics so skip it
+                println!("[Warning] Skip {} type because EntrypointGenerator cannot handle generics", t.name);
                 continue;
             }
             if self.pass_vis(&t.vis) {

@@ -3,6 +3,7 @@ members = [
     "tangara",
     "tangara-gen",
     "tangara-highlevel",
-    "tangara-gen-tests"
+    "tangara-gen-tests/mylib",
+    "tangara-gen-tests/myhost",
 ]
 resolver = "2"

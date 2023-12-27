@@ -11,15 +11,15 @@
       ]
     ]
   ],
-  "name": "MyPackage",
-  "id": 15027680195549333245,
+  "name": "MyLib",
+  "id": 17442259264759129316,
   "types": [
     {
       "attrs": [],
       "vis": "Private",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "WarningTrait",
-      "id": 303421569568773052,
+      "id": 1505309078693284413,
       "generics": [
         [],
         []
@@ -35,9 +35,9 @@
     {
       "attrs": [],
       "vis": "Private",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "EnumUnit",
-      "id": 8987749074312580853,
+      "id": 3464500135772542578,
       "generics": [
         [],
         []
@@ -56,9 +56,9 @@
     {
       "attrs": [],
       "vis": "Internal",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "EnumTuple",
-      "id": 15270927524829422527,
+      "id": 4625095818019192178,
       "generics": [
         [],
         []
@@ -110,9 +110,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "EnumStruct",
-      "id": 186229043989425557,
+      "id": 14304033509570757938,
       "generics": [
         [],
         []
@@ -146,9 +146,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "EnumMixed",
-      "id": 5083507064775102309,
+      "id": 5027534704753303560,
       "generics": [
         [],
         []
@@ -207,9 +207,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "EnumComplex",
-      "id": 4724787910385973656,
+      "id": 7898830565185017404,
       "generics": [
         [],
         []
@@ -286,9 +286,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "MyTrait",
-      "id": 16396140555736685195,
+      "id": 5853466922704838432,
       "generics": [
         [],
         []
@@ -342,9 +342,9 @@
     {
       "attrs": [],
       "vis": "Internal",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "BoxedStr",
-      "id": 12780686785942148536,
+      "id": 9764374307854048469,
       "generics": [
         [],
         []
@@ -376,9 +376,35 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
+      "name": "GenericsTest",
+      "id": 7080624152791471576,
+      "generics": [
+        [
+          "T"
+        ],
+        [
+          [
+            "T",
+            {
+              "Name": "MyTrait"
+            }
+          ]
+        ]
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "MyLib",
       "name": "TestStruct",
-      "id": 16038391058121417372,
+      "id": 662889698570043466,
       "generics": [
         [],
         []
@@ -411,9 +437,9 @@
     {
       "attrs": [],
       "vis": "Public",
-      "namespace": "MyPackage",
+      "namespace": "MyLib",
       "name": "MyStruct",
-      "id": 7534407210518214439,
+      "id": 575532125808595608,
       "generics": [
         [],
         []
@@ -582,32 +608,6 @@
               "Name": "MyTrait"
             }
           ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "MyPackage",
-      "name": "GenericsTest",
-      "id": 10534664994700932592,
-      "generics": [
-        [
-          "T"
-        ],
-        [
-          [
-            "T",
-            {
-              "Name": "MyTrait"
-            }
-          ]
-        ]
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          []
         ]
       }
     }

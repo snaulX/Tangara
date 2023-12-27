@@ -103,105 +103,6 @@
       "attrs": [],
       "vis": "Public",
       "namespace": "tangara.context",
-      "name": "Property",
-      "id": 14514908730944683719,
-      "generics": [
-        [],
-        []
-      ],
-      "kind": {
-        "Struct": [
-          [],
-          [
-            {
-              "attrs": [
-                [
-                  {
-                    "Id": 82866407975103055
-                  },
-                  []
-                ]
-              ],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Fn": [
-                  {
-                    "Name": "Ptr"
-                  },
-                  [
-                    {
-                      "Name": "Ptr"
-                    }
-                  ]
-                ]
-              },
-              "name": "getter",
-              "id": 18278891177158225869
-            },
-            {
-              "attrs": [
-                [
-                  {
-                    "Id": 82866407975103055
-                  },
-                  []
-                ]
-              ],
-              "getter_visibility": "Public",
-              "setter_visibility": "Public",
-              "prop_type": {
-                "Generic": [
-                  {
-                    "Generic": [
-                      {
-                        "Name": "Option"
-                      },
-                      [
-                        {
-                          "Fn": [
-                            null,
-                            [
-                              {
-                                "Name": "Ptr"
-                              },
-                              {
-                                "Name": "Ptr"
-                              }
-                            ]
-                          ]
-                        }
-                      ]
-                    ]
-                  },
-                  [
-                    {
-                      "Fn": [
-                        null,
-                        [
-                          {
-                            "Name": "Ptr"
-                          },
-                          {
-                            "Name": "Ptr"
-                          }
-                        ]
-                      ]
-                    }
-                  ]
-                ]
-              },
-              "name": "setter",
-              "id": 9297565244898655042
-            }
-          ]
-        ]
-      }
-    },
-    {
-      "attrs": [],
-      "vis": "Public",
-      "namespace": "tangara.context",
       "name": "FuncTable",
       "id": 4495031427084170895,
       "generics": [
@@ -700,6 +601,105 @@
             }
           ],
           []
+        ]
+      }
+    },
+    {
+      "attrs": [],
+      "vis": "Public",
+      "namespace": "tangara.context",
+      "name": "Property",
+      "id": 14514908730944683719,
+      "generics": [
+        [],
+        []
+      ],
+      "kind": {
+        "Struct": [
+          [],
+          [
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 82866407975103055
+                  },
+                  []
+                ]
+              ],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Fn": [
+                  {
+                    "Name": "Ptr"
+                  },
+                  [
+                    {
+                      "Name": "Ptr"
+                    }
+                  ]
+                ]
+              },
+              "name": "getter",
+              "id": 18278891177158225869
+            },
+            {
+              "attrs": [
+                [
+                  {
+                    "Id": 82866407975103055
+                  },
+                  []
+                ]
+              ],
+              "getter_visibility": "Public",
+              "setter_visibility": "Public",
+              "prop_type": {
+                "Generic": [
+                  {
+                    "Generic": [
+                      {
+                        "Name": "Option"
+                      },
+                      [
+                        {
+                          "Fn": [
+                            null,
+                            [
+                              {
+                                "Name": "Ptr"
+                              },
+                              {
+                                "Name": "Ptr"
+                              }
+                            ]
+                          ]
+                        }
+                      ]
+                    ]
+                  },
+                  [
+                    {
+                      "Fn": [
+                        null,
+                        [
+                          {
+                            "Name": "Ptr"
+                          },
+                          {
+                            "Name": "Ptr"
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "name": "setter",
+              "id": 9297565244898655042
+            }
+          ]
         ]
       }
     }
