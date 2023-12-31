@@ -5,6 +5,24 @@ use std::alloc::{dealloc, Layout};
 use tangara::context::{Context, Ptr, Property};
 use crate::*;
 
+pub extern "C" fn EnumTuple_dtor(value: Ptr) {
+    unsafe {
+        ptr::drop_in_place(value);
+        dealloc(value, Layout::new::<EnumTuple>());
+    }
+}
+
+pub extern "C" fn EnumTuple_Variant(args_size: usize, args: *mut u8) -> Ptr {
+    unsafe {
+        let args_slice = std::slice::from_raw_parts_mut(args, args_size);
+        let mut args_ptr = args_slice.as_mut_ptr();
+        let field0: i32 = ptr::read(args_ptr as *const i32);
+        args_ptr = args_ptr.add(std::mem::size_of::<i32>());
+        let return_value = Box::new(EnumTuple::Variant(field0));
+		Box::into_raw(return_value) as Ptr
+    }
+}
+
 pub extern "C" fn EnumStruct_dtor(value: Ptr) {
     unsafe {
         ptr::drop_in_place(value);
@@ -164,6 +182,9 @@ pub extern "C" fn MyStruct_get_name(args_size: usize, args: *mut u8) -> Ptr {
 #[no_mangle]
 pub extern "C" fn tgLoad(ctx: &mut Context) {
 	let mut MyLib_package = ctx.add_package(17442259264759129316);
+	let mut EnumTuple_type = MyLib_package.add_type(4625095818019192178);
+	EnumTuple_type.set_dtor(EnumTuple_dtor);
+	EnumTuple_type.add_method(837492378273562681, EnumTuple_Variant);
 	let mut EnumStruct_type = MyLib_package.add_type(14304033509570757938);
 	EnumStruct_type.set_dtor(EnumStruct_dtor);
 	EnumStruct_type.add_method(837492378273562681, EnumStruct_Variant);

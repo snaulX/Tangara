@@ -4,11 +4,11 @@ trait WarningTrait {
     fn kekov() -> i32;
 }
 
-enum EnumUnit {
+pub enum EnumUnit {
     Variant
 }
 
-pub(crate) enum EnumTuple {
+pub enum EnumTuple {
     Variant(i32)
 }
 
@@ -48,7 +48,7 @@ pub struct MyStruct {
     name: String
 }
 
-pub(crate) type BoxedStr = Box<str>;
+pub type BoxedStr = Box<str>;
 
 impl MyTrait for MyStruct {
     fn foo(&mut self, a: String) {

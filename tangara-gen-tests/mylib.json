@@ -34,7 +34,7 @@
     },
     {
       "attrs": [],
-      "vis": "Private",
+      "vis": "Public",
       "namespace": "MyLib",
       "name": "EnumUnit",
       "id": 3464500135772542578,
@@ -55,7 +55,7 @@
     },
     {
       "attrs": [],
-      "vis": "Internal",
+      "vis": "Public",
       "namespace": "MyLib",
       "name": "EnumTuple",
       "id": 4625095818019192178,
@@ -341,7 +341,7 @@
     },
     {
       "attrs": [],
-      "vis": "Internal",
+      "vis": "Public",
       "namespace": "MyLib",
       "name": "BoxedStr",
       "id": 9764374307854048469,
@@ -353,16 +353,7 @@
         "TypeAlias": {
           "Generic": [
             {
-              "Generic": [
-                {
-                  "Name": "Box"
-                },
-                [
-                  {
-                    "Name": "str"
-                  }
-                ]
-              ]
+              "Name": "Box"
             },
             [
               {

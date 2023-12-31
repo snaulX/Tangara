@@ -59,14 +59,14 @@ fn get_from_path(syn_path: &syn::Path) -> TypeRef {
                         }
                         _ => {
                             println!("[Warning] (tangara-gen::PackageGenerator) \
-                                                    Recursive generic arguments are not supported.");
+                                                    other (then type) generic arguments are not supported in path.");
                         }
                     }
                 }
             }
             PathArguments::Parenthesized(_) => {
                 println!("[Warning] (tangara-gen::PackageGenerator) \
-                                        Parenthesized generic arguments are not supported.");
+                                        Parenthesized path arguments are not supported.");
             }
         }
         path.push('.');
@@ -218,8 +218,12 @@ fn get_typeref(t: &Type) -> Option<(TypeRef, Vec<Attribute>)> {
             get_typeref(&paren_type.elem)
         },
         Type::Path(path_type) => {
-            let typeref = get_from_path(&path_type.path);
-            // TODO rework this code due get_from_path
+            // we can't use `get_path_type` there because else we can get duplicated generics
+            let typeref = TypeRef::from(
+                path_type.path.segments.iter().map(|seg| {
+                    seg.ident.to_string()
+                }).collect::<Vec<String>>().join(".")
+            );
             if let Some(last_seg) = &path_type.path.segments.last() {
                 match &last_seg.arguments {
                     PathArguments::None => {
