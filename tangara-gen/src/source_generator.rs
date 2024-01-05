@@ -1,3 +1,4 @@
+use std::fmt::format;
 use std::path::Path;
 use tangara_highlevel::*;
 use crate::rust_generator::Config;
@@ -183,6 +184,140 @@ impl SourceGenerator {
         vis == Visibility::Public || (self.config.enable_internal && vis == Visibility::Internal)
     }
 
+    /// Note: set `type_name` to None if you want generate property functions without a body.
+    fn gen_property(&mut self, property: &Property, type_name: Option<&str>) {
+        let prop_name = &property.name;
+        let prop_type_name = &get_typeref(&property.prop_type);
+        let mut prop_load_name = None;
+
+        // generate getter
+        if self.pass_vis(&property.getter_visibility) {
+            self.bindings_block.push_str("\tfn get_");
+            self.bindings_block.push_str(prop_name);
+            self.bindings_block.push_str("(&self) -> ");
+            self.bindings_block.push_str(prop_type_name);
+            if let Some(parent_type_name) = type_name {
+                // add static variable
+                let getter_name = format!("{}_{}_getter", parent_type_name, prop_name);
+                self.statics_block.push_str("static mut ");
+                self.statics_block.push_str(&getter_name);
+                self.statics_block.push_str(": Option<fn(Ptr) -> Ptr> = None;\n");
+
+                // create property variable in the load body
+                prop_load_name = Some(format!("{}_{}_prop", parent_type_name, prop_name));
+                self.load_body.push_str("let ");
+                self.load_body.push_str(&prop_load_name.clone().unwrap());
+                self.load_body.push_str(" = ");
+                self.load_body.push_str(parent_type_name);
+                self.load_body.push_str("_type.get_property(");
+                self.load_body.push_str(&property.id.to_string());
+                self.load_body.push_str(");\n");
+                // assign getter then
+                self.load_body.push_str(&getter_name);
+                self.load_body.push_str(" = Some(");
+                self.load_body.push_str(&prop_load_name.clone().unwrap());
+                self.load_body.push_str(".getter);\n");
+
+                // implement body
+                self.bindings_block.push_str(" {\n\t\tunsafe {\n\t\t\tlet raw_ptr: *mut ");
+                self.bindings_block.push_str(prop_type_name);
+                self.bindings_block.push_str(" = (");
+                self.bindings_block.push_str(&getter_name);
+                self.bindings_block.push_str(".unwrap())(self as *const ");
+                self.bindings_block.push_str(parent_type_name);
+                self.bindings_block.push_str(" as Ptr) as *mut ");
+                self.bindings_block.push_str(prop_type_name);
+                self.bindings_block.push_str(";\n\t\t\tif !raw_ptr.is_null() {\n\t\t\t\t\
+                *unsafe { Box::from_raw(raw_ptr) }\n\t\t\t} else {\n\t\t\t\t\
+                panic!(\"Pointer of gotten property is null\")\n\t\t\t}\n\t\t}\n\t}\n");
+            }
+            else {
+                self.bindings_block.push_str(";\n");
+            }
+        }
+
+        // generate setter
+        if let Some(setter_vis) = property.setter_visibility {
+            if self.pass_vis(&setter_vis) {
+                self.bindings_block.push_str("\tfn set_");
+                self.bindings_block.push_str(prop_name);
+                self.bindings_block.push_str("(&mut self, value: ");
+                self.bindings_block.push_str(prop_type_name);
+                self.bindings_block.push(')');
+                if let Some(parent_type_name) = type_name {
+                    // add static variable
+                    let setter_name = format!("{}_{}_setter", parent_type_name, prop_name);
+                    self.statics_block.push_str("static mut ");
+                    self.statics_block.push_str(&setter_name);
+                    self.statics_block.push_str(": Option<fn(Ptr, Ptr)> = None;\n");
+
+                    // create property variable in the load body if it doesn't exists yet
+                    let prop_name_from_load = prop_load_name.unwrap_or_else(|| {
+                        let prop_load_name = format!("{}_{}_prop", parent_type_name, prop_name);
+                        self.load_body.push_str("let ");
+                        self.load_body.push_str(&prop_load_name);
+                        self.load_body.push_str(" = ");
+                        self.load_body.push_str(parent_type_name);
+                        self.load_body.push_str("_type.get_property(");
+                        self.load_body.push_str(&property.id.to_string());
+                        self.load_body.push_str(");\n");
+                        prop_load_name
+                    });
+                    // assign setter then
+                    self.load_body.push_str(&setter_name);
+                    self.load_body.push_str(" = Some(");
+                    self.load_body.push_str(&prop_name_from_load);
+                    self.load_body.push_str(".setter.unwrap());\n");
+
+                    // implement body
+                    self.bindings_block.push_str(" {\n\t\tunsafe { (");
+                    self.bindings_block.push_str(&setter_name);
+                    self.bindings_block.push_str(".unwrap())(self as *mut ");
+                    self.bindings_block.push_str(parent_type_name);
+                    self.bindings_block.push_str(" as Ptr, &value as *const ");
+                    self.bindings_block.push_str(prop_type_name);
+                    self.bindings_block.push_str(" as Ptr); }\n\t}\n");
+                }
+                else {
+                    self.bindings_block.push_str(";\n");
+                }
+            }
+        }
+    }
+
+    fn gen_drop(&mut self, t: &Type, type_load_name: &str) {
+        // add static destructor variable
+        let dtor_name = format!("{}_dtor", t.name);
+        self.statics_block.push_str("static mut ");
+        self.statics_block.push_str(&dtor_name);
+        self.statics_block.push_str(": Option<FnDtor> = None;\n");
+
+        // assign it in the load body
+        self.load_body.push_str(&dtor_name);
+        self.load_body.push_str(" = Some(");
+        self.load_body.push_str(type_load_name);
+        self.load_body.push_str(".get_dtor());\n");
+
+        // implement Drop trait
+        self.bindings_block.push_str("\nimpl Drop for ");
+        self.bindings_block.push_str(&get_type_name(&t));
+        self.bindings_block.push_str(" {\n\tfn drop(&mut self) {\n\t\tunsafe {\n\t\t\t");
+        self.bindings_block.push_str(&dtor_name);
+        self.bindings_block.push_str(".expect(\"Destructor wasn't loaded from library\")(self.ptr);\n\t\t}\n\t}\n}");
+    }
+
+    fn add_load_type(&mut self, t: &Type) -> String {
+        let type_name = format!("{}_type", t.name);
+        self.load_body.push_str("let ");
+        self.load_body.push_str(&type_name);
+        self.load_body.push_str(" = ");
+        self.load_body.push_str(&self.package_name);
+        self.load_body.push_str(".get_type(");
+        self.load_body.push_str(&t.id.to_string());
+        self.load_body.push_str(");\n");
+        type_name
+    }
+
     pub fn generate(&mut self) {
         self.load_body.push_str(
             &format!("let {} = ctx.get_package({});\n", self.package_name, self.package.id)
@@ -198,11 +333,23 @@ impl SourceGenerator {
                 }
                 match &t.kind {
                     TypeKind::Class(is_sealed, ctors, props, methods, parents) => {
-                        // TODO add to load_ function
+                        let class_load_name = self.add_load_type(&t);
+                        let class_type_name = &get_type_name(&t);
                         // TODO implement parents
+                        // TODO do something with 'is_sealed'
                         self.bindings_block.push_str("struct ");
-                        self.bindings_block.push_str(&get_type_name(&t));
-                        self.bindings_block.push(';');
+                        self.bindings_block.push_str(class_type_name);
+                        self.bindings_block.push_str("{\n\tptr: Ptr\n}\n");
+                        self.bindings_block.push_str("impl ");
+                        self.bindings_block.push_str(class_type_name);
+                        self.bindings_block.push_str(" {\n");
+                        // TODO implement ctors
+                        for prop in props {
+                            self.gen_property(&prop, Some(&t.name));
+                        }
+                        // TODO implement methods
+                        self.bindings_block.push('}');
+                        self.gen_drop(&t, &class_load_name);
                     }
                     TypeKind::Enum(variants) => {
                         let index_before_vis = self.bindings_block.len() - if t.vis == Visibility::Public {
@@ -224,10 +371,12 @@ impl SourceGenerator {
                         self.bindings_block.push('}');
                     }
                     TypeKind::EnumClass(variants, methods) => {
-                        // TODO add to load_ function
+                        let enum_load_name = self.add_load_type(&t);
                         self.bindings_block.push_str("enum ");
                         self.bindings_block.push_str(&get_type_name(&t));
                         self.bindings_block.push_str(" {\n");
+                        // TODO implement variants
+                        // TODO implement methods
                         self.bindings_block.push('}');
                     }
                     TypeKind::Interface(props, methods, parents) => {
@@ -258,47 +407,57 @@ impl SourceGenerator {
                             self.bindings_block.push_str(";\n");
                         }
                         for prop in props {
-                            let prop_name = &prop.name;
-                            let type_name = &get_typeref(&prop.prop_type);
-
-                            // generate getter
-                            if self.pass_vis(&prop.getter_visibility) {
-                                self.bindings_block.push_str("\tfn get_");
-                                self.bindings_block.push_str(prop_name);
-                                self.bindings_block.push_str("(&self) -> ");
-                                self.bindings_block.push_str(type_name);
-                                self.bindings_block.push_str(";\n");
-                            }
-
-                            // generate setter
-                            if let Some(setter_vis) = prop.setter_visibility {
-                                if self.pass_vis(&setter_vis) {
-                                    self.bindings_block.push_str("\tfn set_");
-                                    self.bindings_block.push_str(prop_name);
-                                    self.bindings_block.push_str("(&mut self, value: ");
-                                    self.bindings_block.push_str(type_name);
-                                    self.bindings_block.push_str(");\n");
-                                }
-                            }
-
+                            self.gen_property(&prop, None);
                         }
                         self.bindings_block.push('}');
                     }
                     TypeKind::Struct(ctors, props) => {
-                        // TODO add to load_ function
+                        let struct_load_name = self.add_load_type(&t);
+                        let struct_type_name = &get_type_name(&t);
                         self.bindings_block.push_str("struct ");
-                        self.bindings_block.push_str(&get_type_name(&t));
+                        self.bindings_block.push_str(struct_type_name);
                         self.bindings_block.push_str("{\n\tptr: Ptr\n}\n");
                         self.bindings_block.push_str("impl ");
-                        self.bindings_block.push_str(&get_type_name(&t));
+                        self.bindings_block.push_str(struct_type_name);
                         self.bindings_block.push_str(" {\n");
+                        let mut ctor_counter = 0;
+                        let mut default_ctor_index = None;
                         for ctor in ctors {
-                            // TODO
+                            if ctor.args.len() == 0 {
+                                default_ctor_index = Some(ctor_counter);
+                            }
+                            let ctor_name = if let Some(ctor_fn_name) = RUST_STD_LIB.get_fn_name(&ctor.attrs) {
+                                // get name from ConstructorFnName attribute if it exists
+                                ctor_fn_name
+                            } else {
+                                // or create something like 'new0'
+                                format!("{}{}", self.config.ctor_name, ctor_counter)
+                            };
+                            self.bindings_block.push_str("\tfn ");
+                            self.bindings_block.push_str(&ctor_name);
+                            self.bindings_block.push('(');
+                            self.bindings_block.push_str(&get_args(&ctor.args));
+                            self.bindings_block.push_str(") -> Self {\n");
+                            // TODO body
+                            self.bindings_block.push('}');
+                            ctor_counter += 1;
                         }
                         for prop in props {
-                            // TODO
+                            self.gen_property(&prop, Some(&t.name));
                         }
                         self.bindings_block.push('}');
+                        self.gen_drop(&t, &struct_load_name);
+
+                        // implement Default trait for empty constructor
+                        if self.config.generate_default {
+                            if let Some(ctor_index) = default_ctor_index {
+                                self.bindings_block.push_str("\nimpl Default for ");
+                                self.bindings_block.push_str(&get_type_name(&t));
+                                self.bindings_block.push_str(" {\n\tfn default() -> Self {\n");
+                                // TODO implement default() body
+                                self.bindings_block.push_str("\t}\n}");
+                            }
+                        }
                     }
                     TypeKind::TypeAlias(alias) => {
                         self.bindings_block.push_str("type ");
@@ -317,12 +476,14 @@ impl SourceGenerator {
         self.generate();
         let disclaimer = r#"// This file was generated by tangara-gen
 // All changes in this file will discard after rebuilding project
-use tangara::context::{Context, Ptr, Property};
+use tangara::context::{FnDtor, Context, Ptr, Property};
+
 "#.to_string();
-        let mut load_body = self.load_body.replace("\n", "\n\t");
+        self.statics_block.push('\n');
+        let mut load_body = self.load_body.replace("\n", "\n\t\t");
         load_body.remove(load_body.len() - 1); // remove last extra '\t'
         let pkg_name = self.package.name;
-        let load_fn = format!("pub fn load_{pkg_name}(ctx: &Context) {{\n\t{load_body}}}\n");
+        let load_fn = format!("\npub fn load_{pkg_name}(ctx: &Context) {{\n\tunsafe {{\n\t\t{load_body}}}\n}}\n");
         std::fs::write(path, String::from_iter([disclaimer, self.statics_block, self.bindings_block, load_fn]))
     }
 }

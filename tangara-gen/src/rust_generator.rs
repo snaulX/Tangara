@@ -5,13 +5,23 @@ use crate::source_generator::SourceGenerator;
 pub struct Config {
     /// Enable generation of internal types and members.
     /// Default value: `false`
-    pub enable_internal: bool
+    pub enable_internal: bool,
+    /// Default name for constructor definition.
+    /// Bindings generator for constructors generates function in impl
+    /// named like this: `fn {ctor_name}{ctor_index}(args) -> Self`, for example `fn new0(arg: i32) -> Self`.
+    /// Default value: `"new"`
+    pub ctor_name: String,
+    /// Generate implementation of [Default] trait for structs that have constructor with empty arguments.
+    /// Default value: `true`
+    pub generate_default: bool
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            enable_internal: false
+            enable_internal: false,
+            ctor_name: "new".to_string(),
+            generate_default: true
         }
     }
 }

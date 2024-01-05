@@ -143,10 +143,8 @@ fn it_works() {
         // object.set_name("Alexander");
         {
             let name = "Alexander";
-            // TODO: rewrite using ptr::read/write
-            let name_boxed = Box::new(name);
             if let Some(set_name) = name_property.setter {
-                set_name(object, Box::into_raw(name_boxed) as Ptr);
+                set_name(object, &name as *const &str as Ptr);
             }
         }
 

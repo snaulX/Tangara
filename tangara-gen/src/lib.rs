@@ -12,7 +12,7 @@ pub use package_generator::Config as PkgGenConfig;
 pub use rust_generator::RustGenerator;
 pub use rust_generator::Config as RustGenConfig;
 
-pub static RUST_STD_LIB: Lazy<RustStdLib> = Lazy::new(|| RustStdLib::new());
+pub static RUST_STD_LIB: Lazy<RustStdLib> = Lazy::new(RustStdLib::new);
 
 pub struct RustStdLib {
     rust_std: Package,
@@ -77,6 +77,10 @@ impl RustStdLib {
             tuple_field_attribute,
             tuple_variant_attribute,
         }
+    }
+
+    pub fn get_package(&self) -> Package {
+        self.rust_std.clone()
     }
 
     pub fn mutable_attribute(&self) -> Attribute {

@@ -14,3 +14,7 @@ target/
 *.pdb
 
 .idea
+
+
+# Json Tangara files generated in tangara-gen-tests
+*.tgjson
