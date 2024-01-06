@@ -318,7 +318,17 @@ fn parse_return_type<T: MethodCollector>(fn_builder: &mut MethodBuilder<T>, retu
     match return_type {
         ReturnType::Default => {} // return type of fn_builder by default is nothing
         ReturnType::Type(_, ret_type) => {
-            if let Some((ret_typeref, _)) = get_typeref(ret_type) {
+            if let Some((ret_typeref, ret_attrs)) = get_typeref(ret_type) {
+                if RUST_STD_LIB.is_reference(&ret_attrs) {
+                    let mut return_prefix = "&".to_string();
+                    if let Some(lifetime) = RUST_STD_LIB.get_lifetime(&ret_attrs) {
+                        return_prefix = format!("&'{lifetime} ");
+                    }
+                    if RUST_STD_LIB.is_mutable(&ret_attrs) {
+                        return_prefix = format!("{return_prefix}mut ");
+                    }
+                    fn_builder.add_attribute(RUST_STD_LIB.return_attribute(&return_prefix));
+                }
                 fn_builder.return_type(ret_typeref);
             }
         }
@@ -618,21 +628,29 @@ impl PackageGenerator {
                                     parse_return_type(&mut fn_builder, &fn_sig.output);
 
                                     // Parse arguments
-                                    let mut self_mut = None;
+                                    let mut is_self = false;
+                                    let mut is_self_mut = false;
+                                    let mut is_self_ref = false;
                                     for arg in &fn_sig.inputs {
                                         match arg {
                                             FnArg::Receiver(self_arg) => {
-                                                // TODO add checks on reference and Self types
-                                                self_mut = Some(self_arg.mutability.is_some());
+                                                // TODO add handling of lifetime
+                                                is_self = true;
+                                                is_self_mut = self_arg.mutability.is_some();
+                                                is_self_ref = self_arg.reference.is_some();
                                             }
                                             FnArg::Typed(fn_arg) => {
+                                                // TODO add checks on Self type
                                                 parse_arg(&mut fn_builder, fn_arg);
                                             }
                                         }
                                     }
-                                    if let Some(is_mut) = self_mut {
-                                        if is_mut {
+                                    if is_self {
+                                        if is_self_mut {
                                             fn_builder.add_attribute(RUST_STD_LIB.mutable_attribute());
+                                        }
+                                        if is_self_ref {
+                                            fn_builder.add_attribute(RUST_STD_LIB.reference_attribute());
                                         }
                                     } else {
                                         fn_builder.set_kind(MethodKind::Static);
@@ -722,18 +740,29 @@ impl PackageGenerator {
                             parse_return_type(&mut fn_builder, &fn_item.sig.output);
 
                             // Parse arguments
-                            let mut have_self = false;
+                            let mut is_self = false;
+                            let mut is_self_mut = false;
+                            let mut is_self_ref = false;
                             for arg in &fn_item.sig.inputs {
                                 match arg {
-                                    FnArg::Receiver(_) => {
-                                        have_self = true;
+                                    FnArg::Receiver(self_arg) => {
+                                        // TODO add handling of lifetime
+                                        is_self = true;
+                                        is_self_mut = self_arg.mutability.is_some();
+                                        is_self_ref = self_arg.reference.is_some();
                                     }
                                     FnArg::Typed(fn_arg) => {
                                         parse_arg(&mut fn_builder, fn_arg);
                                     }
                                 }
                             }
-                            if have_self {
+                            if is_self {
+                                if is_self_mut {
+                                    fn_builder.add_attribute(RUST_STD_LIB.mutable_attribute());
+                                }
+                                if is_self_ref {
+                                    fn_builder.add_attribute(RUST_STD_LIB.reference_attribute());
+                                }
                                 fn_builder.build();
                             }
                             else {

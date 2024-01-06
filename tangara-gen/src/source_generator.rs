@@ -203,15 +203,12 @@ impl SourceGenerator {
 
     /// Returns string of arguments you should pass to function in bindings
     fn gen_args(&mut self, args: &[Argument], with_self: bool) -> String {
-        if args.len() > 0 {
+        if args.len() > 0 || with_self {
             let mut args_assign = Vec::with_capacity(args.len() + 1);
             let mut args_size = String::new();
-            // indicating first time of using args_size variable, so we can don't check args_size on emptiness every time
-            let mut first_time = true;
             if with_self {
                 args_size.push_str("std::mem::size_of::<Ptr>()");
                 args_assign.push("*(args_ptr as *mut Ptr) = self.ptr;".to_string());
-                first_time = false;
             }
             for arg in args {
                 let type_prefix = match &arg.3 {
@@ -222,12 +219,11 @@ impl SourceGenerator {
                     ArgumentKind::In => "&"
                 }.to_string();
                 let arg_type = [type_prefix, get_typeref(&arg.1)].concat();
-                if first_time {
-                    first_time = false;
+                if args_size.len() == 0 {
                     args_assign.push(format!("*(args_ptr as *mut {}) = {};", arg_type, arg.2));
                 } else {
-                    args_size.push_str(" + ");
                     args_assign.push(format!("*(args_ptr.add({}) as *mut {}) = {};", args_size, arg_type, arg.2));
+                    args_size.push_str(" + ");
                 }
                 args_size.push_str(&format!("std::mem::size_of::<{}>()", arg_type));
             }
@@ -401,6 +397,91 @@ impl SourceGenerator {
         }
     }
 
+    fn gen_method(&mut self, method: &Method, type_name: &str) {
+        if self.pass_vis(&method.vis) {
+            let method_name = &method.name;
+
+            self.bindings_block.push('\t');
+            // aware that if method is abstract - it's for traits, so it can't have visibility modifier
+            if method.kind != MethodKind::Abstract {
+                self.gen_vis(&method.vis);
+            }
+            let (return_type, return_type_block) = if let Some(ret_type) = &method.return_type {
+                let prefix = RUST_STD_LIB.get_return_prefix(&method.attrs).unwrap_or_default();
+                let core = [prefix, get_typeref(ret_type)].concat();
+                (core.clone(), [" -> ", &core].concat())
+            } else {
+                (String::new(), String::new())
+            };
+            // omg, maybe I should rewrite these if'es
+            let self_block = if method.kind == MethodKind::Static {
+                ""
+            } else if RUST_STD_LIB.is_reference(&method.attrs) {
+                if RUST_STD_LIB.is_mutable(&method.attrs) {
+                    "&mut self"
+                }
+                else {
+                    "&self"
+                }
+            } else if RUST_STD_LIB.is_mutable(&method.attrs) {
+                "mut self"
+            } else {
+                "self"
+            };
+            let args_block = if self_block.len() > 0 && method.args.len() > 0 {
+                [self_block, ", ", &get_args(&method.args)].concat()
+            } else {
+                [self_block, &get_args(&method.args)].concat()
+            };
+            self.bindings_block.push_str(
+                &format!("fn {method_name}({args_block}){return_type_block}")
+            );
+            // TODO don't forget about generics
+
+            if method.kind != MethodKind::Abstract {
+                // generate implementation
+                let method_load_name = format!("{}_{}", type_name, method_name);
+                self.statics_block.push_str(
+                    &format!("static mut {}: Option<Fn> = None;\n", method_load_name)
+                );
+                self.load_body.push_str(
+                    &format!("{} = Some({}_type.get_method({}).clone());\n", method_load_name, type_name, method.id)
+                );
+
+                self.bindings_block.push_str(
+                    &format!(" {{\n\t\tunsafe {{\n\t\t\tif let Some(method_func) = {} {{", method_load_name)
+                );
+                // we don't join these two bindings' push_str calls into one because self.gen_args()
+                // called below in format generating code to bindings block between these two
+                let args = self.gen_args(&method.args, self_block.len() > 0);
+                if method.return_type.is_none() {
+                    self.bindings_block.push_str(&format!("\n\t\t\t\tmethod_func({});", args));
+                } else {
+                    self.bindings_block.push_str(
+                        &format!(r#"
+                let raw_ptr = method_func({});
+                if !raw_ptr.is_null() {{
+                    *Box::from_raw(raw_ptr as *mut {})
+                }} else {{
+                    panic!("Pointer of method result is null")
+                }}"#, args, return_type)
+                    );
+                }
+                self.bindings_block.push_str(r#"
+            }
+            else {
+                panic!("Constructor wasn't loaded")
+            }
+        }
+    }
+"#);
+            } else {
+                self.bindings_block.push(';');
+                self.bindings_block.push('\n');
+            }
+        }
+    }
+
     fn gen_drop(&mut self, t: &Type, type_load_name: &str) {
         // add static destructor variable
         let dtor_name = format!("{}_dtor", t.name);
@@ -480,7 +561,9 @@ impl{} {} {{
                         for prop in props {
                             self.gen_property(&prop, Some(&t.name));
                         }
-                        // TODO implement methods
+                        for method in methods {
+                            self.gen_method(&method, &t.name);
+                        }
                         self.bindings_block.push('}');
                         self.gen_drop(&t, &class_load_name);
                         // implement Default trait for empty constructor
@@ -518,26 +601,7 @@ impl{} {} {{
                         self.bindings_block.push_str(&get_type_name(&t, true));
                         self.bindings_block.push_str(" {\n");
                         for method in methods {
-                            self.bindings_block.push_str("\tfn ");
-                            self.bindings_block.push_str(&method.name);
-                            self.bindings_block.push('(');
-                            // method kind cannot be static if reflection data was described properly
-                            // but if it does, we can put it into Rust by writing function without self, why not..
-                            if method.kind != MethodKind::Static {
-                                self.bindings_block.push_str("&self, ");
-                            }
-                            self.bindings_block.push_str(&get_args(&method.args));
-                            if method.args.len() == 0 {
-                                // remove extra ', ' in the end after 'self'
-                                self.bindings_block.remove(self.bindings_block.len() - 1);
-                                self.bindings_block.remove(self.bindings_block.len() - 1);
-                            }
-                            self.bindings_block.push(')');
-                            if let Some(return_type) = &method.return_type {
-                                self.bindings_block.push_str(" -> ");
-                                self.bindings_block.push_str(&get_typeref(&return_type));
-                            }
-                            self.bindings_block.push_str(";\n");
+                            self.gen_method(&method, &t.name);
                         }
                         for prop in props {
                             self.gen_property(&prop, None);

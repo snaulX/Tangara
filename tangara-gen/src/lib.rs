@@ -24,6 +24,7 @@ pub struct RustStdLib {
     constructor_name_attribute: Type,
     tuple_field_attribute: Type,
     tuple_variant_attribute: Type,
+    return_attribute: Type,
 }
 
 impl RustStdLib {
@@ -54,6 +55,9 @@ impl RustStdLib {
         tuple_field_attribute.add_property(TypeRef::from("UShort"), "Index")
             .setter_visibility(Visibility::Public).build();
         let mut tuple_variant_attribute = create_class(rust_std.clone(), "TupleVariant");
+        let mut return_attribute = create_class(rust_std.clone(), "Return");
+        return_attribute.add_property(TypeRef::from("String"), "Prefix")
+            .setter_visibility(Visibility::Public).build();
 
         // Build classes
         let struct_field_attribute = struct_field_attribute.build();
@@ -64,6 +68,7 @@ impl RustStdLib {
         let constructor_name_attribute = constructor_name_attribute.build();
         let tuple_field_attribute = tuple_field_attribute.build();
         let tuple_variant_attribute = tuple_variant_attribute.build();
+        let return_attribute = return_attribute.build();
         let rust_std = rust_std.borrow().build();
 
         Self {
@@ -76,6 +81,7 @@ impl RustStdLib {
             constructor_name_attribute,
             tuple_field_attribute,
             tuple_variant_attribute,
+            return_attribute,
         }
     }
 
@@ -116,6 +122,10 @@ impl RustStdLib {
         Attribute(TypeRef::from(&self.tuple_variant_attribute), vec![])
     }
 
+    pub fn return_attribute(&self, return_prefix: &str) -> Attribute {
+        Attribute(TypeRef::from(&self.return_attribute), vec![Value::from(return_prefix)])
+    }
+
     pub fn is_struct_field(&self, attrs: &[Attribute]) -> bool {
         // Cache type data for comparing
         let struct_field_data = get_typeref_bytes(&TypeRef::from(&self.struct_field_attribute));
@@ -141,6 +151,19 @@ impl RustStdLib {
         attrs.iter().any(|attr| get_typeref_bytes(&attr.0) == tuple_variant_data)
     }
 
+    /// Check attributes on `Lifetime` attribute and returns his 1st value (`Name`) if it exists.
+    pub fn get_lifetime(&self, attrs: &[Attribute]) -> Option<String> {
+        let lifetime_data = get_typeref_bytes(&TypeRef::from(&self.constructor_name_attribute));
+        attrs.iter().find_map(|attr| {
+            if get_typeref_bytes(&attr.0) == lifetime_data {
+                if let Value::String(name) = &attr.1[0] {
+                    return Some(name.clone());
+                }
+            }
+            None
+        })
+    }
+
     /// Check attributes on `ConstructorFnName` attribute and returns his 1st value (`FnName`) if it exists.
     pub fn get_fn_name(&self, attrs: &[Attribute]) -> Option<String> {
         let constructor_name_data = get_typeref_bytes(&TypeRef::from(&self.constructor_name_attribute));
@@ -161,6 +184,19 @@ impl RustStdLib {
             if get_typeref_bytes(&attr.0) == tuple_field_data {
                 if let Value::UShort(index) = &attr.1[0] {
                     return Some(index.clone());
+                }
+            }
+            None
+        })
+    }
+
+    /// Check attributes on `Return` attribute and returns his 1st value (`Prefix`) if it exists.
+    pub fn get_return_prefix(&self, attrs: &[Attribute]) -> Option<String> {
+        let return_data = get_typeref_bytes(&TypeRef::from(&self.return_attribute));
+        attrs.iter().find_map(|attr| {
+            if get_typeref_bytes(&attr.0) == return_data {
+                if let Value::String(return_prefix) = &attr.1[0] {
+                    return Some(return_prefix.clone());
                 }
             }
             None
