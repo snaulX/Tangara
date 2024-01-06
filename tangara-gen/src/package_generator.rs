@@ -329,11 +329,19 @@ fn parse_arg<T: MethodCollector>(fn_builder: &mut MethodBuilder<T>, fn_arg: &Pat
     if let Pat::Ident(arg_ident) = &fn_arg.pat.deref() {
         let arg_name = arg_ident.ident.to_string();
         let arg_type = get_typeref(&fn_arg.ty).expect("Arg type cannot be None");
-        for attr in arg_type.1 {
-            fn_builder.arg_attribute(attr);
+        for attr in &arg_type.1 {
+            fn_builder.arg_attribute(attr.clone());
         }
         if arg_ident.mutability.is_some() {
             fn_builder.arg_ref(arg_type.0, arg_name.as_str());
+        }
+        else if RUST_STD_LIB.is_reference(&arg_type.1) {
+            if RUST_STD_LIB.is_mutable(&arg_type.1) {
+                fn_builder.arg_ref(arg_type.0, arg_name.as_str());
+            }
+            else {
+                fn_builder.arg_in(arg_type.0, arg_name.as_str());
+            }
         }
         else {
             fn_builder.arg(arg_type.0, arg_name.as_str());
@@ -575,11 +583,19 @@ impl PackageGenerator {
                                                 if let Pat::Ident(arg_ident) = &ctor_arg.pat.deref() {
                                                     let arg_name = arg_ident.ident.to_string();
                                                     let arg_type = get_typeref(&ctor_arg.ty).expect("Arg type cannot be None");
-                                                    for attr in arg_type.1 {
-                                                        ctor_builder.arg_attribute(attr);
+                                                    for attr in &arg_type.1 {
+                                                        ctor_builder.arg_attribute(attr.clone());
                                                     }
                                                     if arg_ident.mutability.is_some() {
                                                         ctor_builder.arg_ref(arg_type.0, arg_name.as_str());
+                                                    }
+                                                    else if RUST_STD_LIB.is_reference(&arg_type.1) {
+                                                        if RUST_STD_LIB.is_mutable(&arg_type.1) {
+                                                            ctor_builder.arg_ref(arg_type.0, arg_name.as_str());
+                                                        }
+                                                        else {
+                                                            ctor_builder.arg_in(arg_type.0, arg_name.as_str());
+                                                        }
                                                     }
                                                     else {
                                                         ctor_builder.arg(arg_type.0, arg_name.as_str());

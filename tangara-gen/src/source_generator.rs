@@ -143,17 +143,16 @@ fn get_args(args: &[Argument]) -> String {
     let mut result = String::new();
     for arg in args {
         // TODO work with attributes
-        match &arg.3 {
-            // TODO research this section
-            ArgumentKind::Default => {}
-            ArgumentKind::DefaultValue(value) => {}
-            ArgumentKind::Out => {}
-            ArgumentKind::Ref => {
-                result.push_str("mut ");
-            }
-        }
+        let type_prefix = match &arg.3 {
+            ArgumentKind::Default => "",
+            ArgumentKind::DefaultValue(_) => "",
+            ArgumentKind::Out => "&mut ",
+            ArgumentKind::Ref => "&mut ",
+            ArgumentKind::In => "&"
+        };
         result.push_str(&arg.2); // name
         result.push(':');
+        result.push_str(type_prefix);
         result.push_str(&get_typeref(&arg.1)); // type
         result.push_str(", ");
     }

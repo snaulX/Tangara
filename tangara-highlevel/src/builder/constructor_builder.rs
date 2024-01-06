@@ -73,6 +73,11 @@ impl<'a, T: ConstructorCollector> ConstructorBuilder<'a, T> {
         self.add_argument(arg_type, name, ArgumentKind::Ref)
     }
 
+    /// Creates input argument with given type and name
+    pub fn arg_in(&mut self, arg_type: TypeRef, name: &str) -> &mut Self {
+        self.add_argument(arg_type, name, ArgumentKind::In)
+    }
+
     pub fn get_constructor(&self) -> Constructor {
         Constructor {
             attrs: self.attrs.to_vec(),

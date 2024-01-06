@@ -20,10 +20,16 @@ pub enum Visibility {
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub enum ArgumentKind {
+    /// Argument that copies itself and pass it into function
     Default,
+    /// Argument which contains default value and can be skipped
     DefaultValue(Value),
+    /// Argument which moves into function by reference and cannot be used there except being assigned
     Out,
-    Ref
+    /// Argument which moves into function by reference and can be changed there
+    Ref,
+    /// Argument which moves into function by reference and cannot be changed there
+    In
 }
 
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]

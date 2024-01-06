@@ -72,25 +72,23 @@ impl EntrypointGenerator {
         }
         let mut arg_names = vec![];
         for arg in args {
-            let ref_prefix = if RUST_STD_LIB.is_reference(&arg.0) {
-                "&"
-            } else {
-                ""
-            }.to_string();
+            let (ref_prefix, ptr_type_prefix) = match &arg.3 {
+                ArgumentKind::Default => ("", "const"),
+                ArgumentKind::DefaultValue(_) => ("", "const"),
+                ArgumentKind::Out => ("&", "mut"),
+                ArgumentKind::Ref => ("&", "mut"),
+                ArgumentKind::In => ("&", "const")
+            };
+            let let_postfix = if ptr_type_prefix == "mut" { " mut" } else { "" };
             let arg_type = [
                 ref_prefix,
-                self.get_type_name(&arg.1).unwrap_or("<ERROR TYPE GENERATOR>".to_string())
+                &self.get_type_name(&arg.1).unwrap_or("<ERROR TYPE GENERATOR>".to_string())
             ].concat();
-            let arg_type_ptr = if RUST_STD_LIB.is_mutable(&arg.0) {
-                format!("*mut {}", arg_type)
-            } else {
-                format!("*const {}", arg_type)
-            };
             args_code.push_str(
                 &format!(r#"
-        let {}: {} = ptr::read(args_ptr as {});
+        let{} {}: {} = ptr::read(args_ptr as *{} {});
         args_ptr = args_ptr.add(std::mem::size_of::<{}>());"#,
-                         arg.2, arg_type, arg_type_ptr, arg_type)
+                         let_postfix, arg.2, arg_type, ptr_type_prefix, arg_type, arg_type)
             );
             arg_names.push(arg.2.clone());
         }
