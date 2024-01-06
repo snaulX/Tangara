@@ -51,6 +51,12 @@ pub struct MyStruct {
 pub type BoxedStr = Box<str>;
 
 impl TestStruct {
+    pub fn test_empty_ctor() -> Self {
+        Self {
+            id: 0
+        }
+    }
+
     pub fn new(id: u64) -> Self {
         Self {
             id

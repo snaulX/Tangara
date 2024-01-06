@@ -166,6 +166,13 @@ pub extern "C" fn TestStruct_dtor(value: Ptr) {
 
 pub extern "C" fn TestStruct_ctor0(args_size: usize, args: *mut u8) -> Ptr {
     unsafe {
+        let value = Box::new(TestStruct::test_empty_ctor());
+        Box::into_raw(value) as Ptr
+    }
+}
+
+pub extern "C" fn TestStruct_ctor1(args_size: usize, args: *mut u8) -> Ptr {
+    unsafe {
         let args_slice = std::slice::from_raw_parts_mut(args, args_size);
         let mut args_ptr = args_slice.as_mut_ptr();
         let id: u64 = ptr::read(args_ptr as *const u64);
@@ -217,5 +224,6 @@ pub extern "C" fn tgLoad(ctx: &mut Context) {
 	let mut TestStruct_type = MyLib_package.add_type(662889698570043466);
 	TestStruct_type.set_dtor(TestStruct_dtor);
 	TestStruct_type.add_ctor(TestStruct_ctor0);
+	TestStruct_type.add_ctor(TestStruct_ctor1);
 	TestStruct_type.add_property(5824848936401749885, Property { getter: TestStruct_get_id, setter: Some(TestStruct_set_id) });
 }

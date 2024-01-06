@@ -192,6 +192,52 @@ impl SourceGenerator {
         vis == Visibility::Public || (self.config.enable_internal && vis == Visibility::Internal)
     }
 
+    /// Returns string of arguments you should pass to function in bindings
+    fn gen_args(&mut self, args: &[Argument], with_self: bool) -> String {
+        if args.len() > 0 {
+            let mut args_assign = Vec::with_capacity(args.len() + 1);
+            let mut args_size = String::new();
+            // indicating first time of using args_size variable, so we can don't check args_size on emptiness every time
+            let mut first_time = true;
+            if with_self {
+                args_size.push_str("std::mem::size_of::<Ptr>()");
+                args_assign.push("*(args_ptr as *mut Ptr) = self;".to_string());
+                first_time = false;
+            }
+            for arg in args {
+                let type_prefix = match &arg.3 {
+                    ArgumentKind::Default => "",
+                    ArgumentKind::DefaultValue(_) => "",
+                    ArgumentKind::Out => "&mut ",
+                    ArgumentKind::Ref => "&mut ",
+                    ArgumentKind::In => "&"
+                }.to_string();
+                let arg_type = [type_prefix, get_typeref(&arg.1)].concat();
+                if first_time {
+                    first_time = false;
+                    args_assign.push(format!("*(args_ptr as *mut {}) = {};", arg_type, arg.2));
+                } else {
+                    args_size.push_str(" + ");
+                    args_assign.push(format!("*(args_ptr.add({}) as *mut {}) = {};", args_size, arg_type, arg.2));
+                }
+                args_size.push_str(&format!("std::mem::size_of::<{}>()", arg_type));
+            }
+            self.bindings_block.push_str(
+                &format!(r#"
+                let args_size = {args_size};
+                let mut args_buf = vec![0u8; args_size];
+                let args_ptr = args_buf.as_mut_ptr();
+                unsafe {{
+                    {}
+                }}"#, args_assign.join("\n\t\t\t\t\t"))
+            );
+            "args_size, args_ptr".to_string()
+        }
+        else {
+            "0, std::ptr::null_mut()".to_string()
+        }
+    }
+
     /// Note: set `type_name` to None if you want generate property functions without a body.
     fn gen_property(&mut self, property: &Property, type_name: Option<&str>) {
         let prop_name = &property.name;
@@ -228,14 +274,14 @@ impl SourceGenerator {
                 // implement body
                 self.bindings_block.push_str(" {\n\t\tunsafe {\n\t\t\tlet raw_ptr: *mut ");
                 self.bindings_block.push_str(prop_type_name);
-                self.bindings_block.push_str(" = (");
+                self.bindings_block.push_str(" = ");
                 self.bindings_block.push_str(&getter_name);
-                self.bindings_block.push_str(".unwrap())(self as *const ");
+                self.bindings_block.push_str(".unwrap()(self as *const ");
                 self.bindings_block.push_str(parent_type_name);
                 self.bindings_block.push_str(" as Ptr) as *mut ");
                 self.bindings_block.push_str(prop_type_name);
                 self.bindings_block.push_str(";\n\t\t\tif !raw_ptr.is_null() {\n\t\t\t\t\
-                *unsafe { Box::from_raw(raw_ptr) }\n\t\t\t} else {\n\t\t\t\t\
+                *Box::from_raw(raw_ptr)\n\t\t\t} else {\n\t\t\t\t\
                 panic!(\"Pointer of gotten property is null\")\n\t\t\t}\n\t\t}\n\t}\n");
             }
             else {
@@ -276,9 +322,9 @@ impl SourceGenerator {
                     );
 
                     // implement body
-                    self.bindings_block.push_str(" {\n\t\tunsafe { (");
+                    self.bindings_block.push_str(" {\n\t\tunsafe { ");
                     self.bindings_block.push_str(&setter_name);
-                    self.bindings_block.push_str(".unwrap())(self as *mut ");
+                    self.bindings_block.push_str(".unwrap()(self as *mut ");
                     self.bindings_block.push_str(parent_type_name);
                     self.bindings_block.push_str(" as Ptr, &value as *const ");
                     self.bindings_block.push_str(prop_type_name);
@@ -291,6 +337,52 @@ impl SourceGenerator {
         }
     }
 
+    /// Returns constructor's function name
+    fn gen_ctor(&mut self, ctor: &Constructor, index: u32, type_name: &str) -> String {
+        let ctor_load_name = format!("{}_ctor{}", type_name, index);
+        self.statics_block.push_str(
+            &format!("static mut {}: Option<Fn> = None;\n", ctor_load_name)
+        );
+        self.load_body.push_str(
+            &format!("{} = Some({}_type.get_ctor({}).clone());\n", ctor_load_name, type_name, index)
+        );
+
+        let ctor_name = if let Some(ctor_fn_name) = RUST_STD_LIB.get_fn_name(&ctor.attrs) {
+            // get name from ConstructorFnName attribute if it exists
+            ctor_fn_name
+        } else {
+            // or create something like 'new0'
+            [self.config.ctor_name.clone(), index.to_string()].concat()
+        };
+        self.bindings_block.push_str("\tfn ");
+        self.bindings_block.push_str(&ctor_name);
+        self.bindings_block.push('(');
+        self.bindings_block.push_str(&get_args(&ctor.args));
+        self.bindings_block.push_str(
+            &format!(") -> Self {{\n\t\tunsafe {{\n\t\t\tif let Some(ctor_func) = {} {{", ctor_load_name)
+        );
+        // we don't join these two bindings' push_str calls into one because self.gen_args()
+        // called below in format generating code to bindings block between these two
+        let args = self.gen_args(&ctor.args, false);
+        self.bindings_block.push_str(
+            &format!(r#"
+                let this = ctor_func({});
+                if !this.is_null() {{
+                    *Box::from_raw(this as *mut {})
+                }} else {{
+                    panic!("Pointer of constructor result is null")
+                }}
+            }}
+            else {{
+                panic!("Constructor wasn't loaded")
+            }}
+        }}
+    }}
+"#, args, type_name)
+        );
+        ctor_name
+    }
+
     fn gen_drop(&mut self, t: &Type, type_load_name: &str) {
         // add static destructor variable
         let dtor_name = format!("{}_dtor", t.name);
@@ -300,13 +392,27 @@ impl SourceGenerator {
         self.load_body.push_str(&format!("{dtor_name} = Some({type_load_name}.get_dtor());\n"));
 
         // implement Drop trait
-        self.bindings_block.push_str("\nimpl");
+        self.bindings_block.push_str("\n\nimpl");
         self.bindings_block.push_str(&get_generics(&t.generics, true));
         self.bindings_block.push_str(" Drop for ");
         self.bindings_block.push_str(&get_type_name(&t, false));
         self.bindings_block.push_str(" {\n\tfn drop(&mut self) {\n\t\tunsafe {\n\t\t\t");
         self.bindings_block.push_str(&dtor_name);
         self.bindings_block.push_str(".expect(\"Destructor wasn't loaded from library\")(self.ptr);\n\t\t}\n\t}\n}");
+    }
+
+    fn gen_default(&mut self, t: &Type, ctor_name: &str) {
+        if self.config.generate_default {
+            self.bindings_block.push_str("\n\nimpl");
+            self.bindings_block.push_str(&get_generics(&t.generics, true));
+            self.bindings_block.push_str(" Default for ");
+            self.bindings_block.push_str(&get_type_name(&t, false));
+            self.bindings_block.push_str(" {\n\tfn default() -> Self {\n\t\tunsafe {\n\t\t\t");
+            self.bindings_block.push_str(&t.name);
+            self.bindings_block.push_str("::");
+            self.bindings_block.push_str(ctor_name);
+            self.bindings_block.push_str("()\n\t\t}\n\t}\n}");
+        }
     }
 
     fn add_load_type(&mut self, t: &Type) -> String {
@@ -349,13 +455,25 @@ impl{} {} {{
                         // first was type name with generics and where Type<T: Kek>
                         // second was generics with where <T: Kek>
                         // third was type name with generics without where Type<T>
-                        // TODO implement ctors
+                        let mut ctor_counter = 0;
+                        let mut default_ctor_name = None;
+                        for ctor in ctors {
+                            let ctor_name = self.gen_ctor(&ctor, ctor_counter, &t.name);
+                            if ctor.args.len() == 0 {
+                                default_ctor_name = Some(ctor_name);
+                            }
+                            ctor_counter += 1;
+                        }
                         for prop in props {
                             self.gen_property(&prop, Some(&t.name));
                         }
                         // TODO implement methods
                         self.bindings_block.push('}');
                         self.gen_drop(&t, &class_load_name);
+                        // implement Default trait for empty constructor
+                        if let Some(ctor_name) = default_ctor_name {
+                            self.gen_default(&t, &ctor_name);
+                        }
                     }
                     TypeKind::Enum(variants) => {
                         let index_before_vis = self.bindings_block.len() - if t.vis == Visibility::Public {
@@ -425,25 +543,12 @@ impl{} {} {{
                         // second was generics with where <T: Kek>
                         // third was type name with generics without where Type<T>
                         let mut ctor_counter = 0;
-                        let mut default_ctor_index = None;
+                        let mut default_ctor_name = None;
                         for ctor in ctors {
+                            let ctor_name = self.gen_ctor(&ctor, ctor_counter, &t.name);
                             if ctor.args.len() == 0 {
-                                default_ctor_index = Some(ctor_counter);
+                                default_ctor_name = Some(ctor_name);
                             }
-                            let ctor_name = if let Some(ctor_fn_name) = RUST_STD_LIB.get_fn_name(&ctor.attrs) {
-                                // get name from ConstructorFnName attribute if it exists
-                                ctor_fn_name
-                            } else {
-                                // or create something like 'new0'
-                                format!("{}{}", self.config.ctor_name, ctor_counter)
-                            };
-                            self.bindings_block.push_str("\tfn ");
-                            self.bindings_block.push_str(&ctor_name);
-                            self.bindings_block.push('(');
-                            self.bindings_block.push_str(&get_args(&ctor.args));
-                            self.bindings_block.push_str(") -> Self {\n");
-                            // TODO body
-                            self.bindings_block.push('}');
                             ctor_counter += 1;
                         }
                         for prop in props {
@@ -453,26 +558,17 @@ impl{} {} {{
                         self.gen_drop(&t, &struct_load_name);
 
                         // implement Default trait for empty constructor
-                        if self.config.generate_default {
-                            if let Some(ctor_index) = default_ctor_index {
-                                self.bindings_block.push_str("\nimpl");
-                                self.bindings_block.push_str(&get_generics(&t.generics, true));
-                                self.bindings_block.push_str(" Default for ");
-                                self.bindings_block.push_str(&get_type_name(&t, false));
-                                self.bindings_block.push_str(" {\n\tfn default() -> Self {\n");
-                                // TODO implement default() body
-                                self.bindings_block.push_str("\t}\n}");
-                            }
+                        if let Some(ctor_name) = default_ctor_name {
+                            self.gen_default(&t, &ctor_name);
                         }
                     }
                     TypeKind::TypeAlias(alias) => {
-                        self.bindings_block.push_str("type ");
-                        self.bindings_block.push_str(&get_type_name(&t, true));
-                        self.bindings_block.push('=');
-                        self.bindings_block.push_str(&get_typeref(&alias));
-                        self.bindings_block.push(';');
+                        self.bindings_block.push_str(
+                            &format!("type {} = {};", get_type_name(&t, true), get_typeref(&alias))
+                        );
                     }
                 }
+                self.bindings_block.push('\n');
                 self.bindings_block.push('\n');
             }
         }

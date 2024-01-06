@@ -3,7 +3,9 @@ use tangara_highlevel::Package;
 
 fn main() {
     // generate Tangara reflection data for this lib
-    let pkg = PackageGenerator::new("MyLib", PkgGenConfig::default())
+    let mut config = PkgGenConfig::default();
+    config.ctor_names.push("test_empty_ctor".to_string());
+    let pkg = PackageGenerator::new("MyLib", config)
         .parse_file("src/lib.rs")
         .generate();
     let pkg_json = serde_json::to_string_pretty(&pkg).expect("Convert tangara package to json");

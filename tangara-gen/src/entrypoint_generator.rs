@@ -117,7 +117,7 @@ pub extern "C" fn {}_dtor(value: Ptr) {{
         );
     }
 
-    fn gen_ctor(&mut self, ctor: &Constructor, t: &Type, mut count: usize) {
+    fn gen_ctor(&mut self, ctor: &Constructor, t: &Type, count: usize) {
         if self.pass_vis(&ctor.vis) {
             if let Some(fn_name) = RUST_STD_LIB.get_fn_name(&ctor.attrs) {
                 let ctor_name = format!("{}_ctor{}", t.name, count);
@@ -136,7 +136,6 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                 self.tgload_body.push_str(
                     &format!("{}.add_ctor({});\n", get_type_name(t), ctor_name)
                 );
-                count += 1;
             }
             else {
                 println!("[Warning] (tangara-gen::EntrypointGenerator) Bindings for constructors \
@@ -293,9 +292,10 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                             &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
                         );
                         self.gen_dtor(&t);
-                        let count = 0usize;
+                        let mut count = 0usize;
                         for ctor in ctors {
                             self.gen_ctor(ctor, &t, count);
+                            count += 1;
                         }
                         for prop in props {
                             self.gen_property(prop, &t);
@@ -323,9 +323,10 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                             &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
                         );
                         self.gen_dtor(&t);
-                        let count = 0usize;
+                        let mut count = 0usize;
                         for ctor in ctors {
                             self.gen_ctor(ctor, &t, count);
+                            count += 1;
                         }
                         for prop in props {
                             self.gen_property(prop, &t);
