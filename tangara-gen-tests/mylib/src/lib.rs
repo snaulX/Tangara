@@ -50,6 +50,35 @@ pub struct MyStruct {
 
 pub type BoxedStr = Box<str>;
 
+impl TestStruct {
+    pub fn new(id: u64) -> Self {
+        Self {
+            id
+        }
+    }
+}
+
+impl<T: MyTrait> GenericsTest<T> {
+    pub fn new() -> Self {
+        Self {
+            some_field: None
+        }
+    }
+
+    pub fn set_t(&mut self, t: T) {
+        self.some_field = Some(t);
+    }
+
+    pub fn print_t_bar(&self) {
+        if let Some(t) = &self.some_field {
+            println!("Some({})", t.bar());
+        }
+        else {
+            println!("None");
+        }
+    }
+}
+
 impl MyTrait for MyStruct {
     fn foo(&mut self, a: String) {
         self.name = a;
