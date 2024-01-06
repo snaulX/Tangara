@@ -2,13 +2,13 @@
 // All changes in this file will discard after rebuilding project
 use tangara::context::{FnDtor, Context, Ptr, Fn};
 
+static mut MyStruct_ctor0: Option<Fn> = None;
+static mut MyStruct_dtor: Option<FnDtor> = None;
 static mut TestStruct_ctor0: Option<Fn> = None;
 static mut TestStruct_ctor1: Option<Fn> = None;
 static mut TestStruct_id_getter: Option<extern "C" fn(Ptr) -> Ptr> = None;
 static mut TestStruct_id_setter: Option<extern "C" fn(Ptr, Ptr)> = None;
 static mut TestStruct_dtor: Option<FnDtor> = None;
-static mut MyStruct_ctor0: Option<Fn> = None;
-static mut MyStruct_dtor: Option<FnDtor> = None;
 
 #[derive(Ord, PartialOrd, Hash, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum EnumUnit {
@@ -34,84 +34,12 @@ pub trait MyTrait {
 
 pub type BoxedStr = Box<str>;
 
-pub struct TestStruct {
-    ptr: Ptr
-}
-
-impl TestStruct {
-	fn test_empty_ctor() -> Self {
-		unsafe {
-			if let Some(ctor_func) = TestStruct_ctor0 {
-                let this = ctor_func(0, std::ptr::null_mut());
-                if !this.is_null() {
-                    *Box::from_raw(this as *mut TestStruct)
-                } else {
-                    panic!("Pointer of constructor result is null")
-                }
-            }
-            else {
-                panic!("Constructor wasn't loaded")
-            }
-        }
-    }
-	fn new(id:u64) -> Self {
-		unsafe {
-			if let Some(ctor_func) = TestStruct_ctor1 {
-                let args_size = std::mem::size_of::<u64>();
-                let mut args_buf = vec![0u8; args_size];
-                let args_ptr = args_buf.as_mut_ptr();
-                unsafe {
-                    *(args_ptr as *mut u64) = id;
-                }
-                let this = ctor_func(args_size, args_ptr);
-                if !this.is_null() {
-                    *Box::from_raw(this as *mut TestStruct)
-                } else {
-                    panic!("Pointer of constructor result is null")
-                }
-            }
-            else {
-                panic!("Constructor wasn't loaded")
-            }
-        }
-    }
-	fn get_id(&self) -> u64 {
-		unsafe {
-			let raw_ptr: *mut u64 = TestStruct_id_getter.unwrap()(self as *const TestStruct as Ptr) as *mut u64;
-			if !raw_ptr.is_null() {
-				*Box::from_raw(raw_ptr)
-			} else {
-				panic!("Pointer of gotten property is null")
-			}
-		}
-	}
-	fn set_id(&mut self, value: u64) {
-		unsafe { TestStruct_id_setter.unwrap()(self as *mut TestStruct as Ptr, &value as *const u64 as Ptr); }
-	}
-}
-
-impl Drop for TestStruct {
-	fn drop(&mut self) {
-		unsafe {
-			TestStruct_dtor.expect("Destructor wasn't loaded from library")(self.ptr);
-		}
-	}
-}
-
-impl Default for TestStruct {
-	fn default() -> Self {
-		unsafe {
-			TestStruct::test_empty_ctor()
-		}
-	}
-}
-
 pub struct MyStruct {
     ptr: Ptr
 }
 
 impl MyStruct {
-	fn new(name:&str) -> Self {
+	pub fn new(name:&str) -> Self {
 		unsafe {
 			if let Some(ctor_func) = MyStruct_ctor0 {
                 let args_size = std::mem::size_of::<&str>();
@@ -122,7 +50,9 @@ impl MyStruct {
                 }
                 let this = ctor_func(args_size, args_ptr);
                 if !this.is_null() {
-                    *Box::from_raw(this as *mut MyStruct)
+                    Self {
+                        ptr: this
+                    }
                 } else {
                     panic!("Pointer of constructor result is null")
                 }
@@ -142,6 +72,82 @@ impl Drop for MyStruct {
 	}
 }
 
+pub struct TestStruct {
+    ptr: Ptr
+}
+
+impl TestStruct {
+	pub fn test_empty_ctor() -> Self {
+		unsafe {
+			if let Some(ctor_func) = TestStruct_ctor0 {
+                let this = ctor_func(0, std::ptr::null_mut());
+                if !this.is_null() {
+                    Self {
+                        ptr: this
+                    }
+                } else {
+                    panic!("Pointer of constructor result is null")
+                }
+            }
+            else {
+                panic!("Constructor wasn't loaded")
+            }
+        }
+    }
+	pub fn new(id:u64) -> Self {
+		unsafe {
+			if let Some(ctor_func) = TestStruct_ctor1 {
+                let args_size = std::mem::size_of::<u64>();
+                let mut args_buf = vec![0u8; args_size];
+                let args_ptr = args_buf.as_mut_ptr();
+                unsafe {
+                    *(args_ptr as *mut u64) = id;
+                }
+                let this = ctor_func(args_size, args_ptr);
+                if !this.is_null() {
+                    Self {
+                        ptr: this
+                    }
+                } else {
+                    panic!("Pointer of constructor result is null")
+                }
+            }
+            else {
+                panic!("Constructor wasn't loaded")
+            }
+        }
+    }
+	pub fn get_id(&self) -> u64 {
+		unsafe {
+			let raw_ptr: *mut u64 = TestStruct_id_getter.unwrap()(self.ptr) as *mut u64;
+			if !raw_ptr.is_null() {
+				*Box::from_raw(raw_ptr)
+			} else {
+				panic!("Pointer of gotten property is null")
+			}
+		}
+	}
+	pub fn set_id(&mut self, value: u64) {
+		unsafe { TestStruct_id_setter.unwrap()(self.ptr, &value as *const u64 as Ptr); }
+	}
+}
+
+impl Drop for TestStruct {
+	fn drop(&mut self) {
+		unsafe {
+			TestStruct_dtor.expect("Destructor wasn't loaded from library")(self.ptr);
+		}
+	}
+}
+
+impl Default for TestStruct {
+	fn default() -> Self {
+		unsafe {
+			TestStruct::test_empty_ctor()
+		}
+	}
+}
+
 
 pub fn load_MyLib(ctx: &Context) {
 	unsafe {
@@ -150,6 +156,9 @@ pub fn load_MyLib(ctx: &Context) {
 		let EnumStruct_type = MyLib_package.get_type(14304033509570757938);
 		let EnumMixed_type = MyLib_package.get_type(5027534704753303560);
 		let EnumComplex_type = MyLib_package.get_type(7898830565185017404);
+		let MyStruct_type = MyLib_package.get_type(575532125808595608);
+		MyStruct_ctor0 = Some(MyStruct_type.get_ctor(0).clone());
+		MyStruct_dtor = Some(MyStruct_type.get_dtor());
 		let TestStruct_type = MyLib_package.get_type(662889698570043466);
 		TestStruct_ctor0 = Some(TestStruct_type.get_ctor(0).clone());
 		TestStruct_ctor1 = Some(TestStruct_type.get_ctor(1).clone());
@@ -157,8 +166,5 @@ pub fn load_MyLib(ctx: &Context) {
 		TestStruct_id_getter = Some(TestStruct_id_prop.getter);
 		TestStruct_id_setter = Some(TestStruct_id_prop.setter.unwrap());
 		TestStruct_dtor = Some(TestStruct_type.get_dtor());
-		let MyStruct_type = MyLib_package.get_type(575532125808595608);
-		MyStruct_ctor0 = Some(MyStruct_type.get_ctor(0).clone());
-		MyStruct_dtor = Some(MyStruct_type.get_dtor());
 	}
 }

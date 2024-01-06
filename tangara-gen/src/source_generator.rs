@@ -1,4 +1,3 @@
-use std::fmt::format;
 use std::path::Path;
 use tangara_highlevel::*;
 use crate::rust_generator::Config;
@@ -187,9 +186,19 @@ impl SourceGenerator {
         }
     }
 
+    /// Checks visibility for pass generating
     fn pass_vis(&self, vis: &Visibility) -> bool {
         let vis = vis.clone();
         vis == Visibility::Public || (self.config.enable_internal && vis == Visibility::Internal)
+    }
+
+    fn gen_vis(&mut self, vis: &Visibility) {
+        if *vis == Visibility::Public {
+            self.bindings_block.push_str("pub ");
+        }
+        else {
+            self.bindings_block.push_str("pub(crate) ");
+        }
     }
 
     /// Returns string of arguments you should pass to function in bindings
@@ -201,7 +210,7 @@ impl SourceGenerator {
             let mut first_time = true;
             if with_self {
                 args_size.push_str("std::mem::size_of::<Ptr>()");
-                args_assign.push("*(args_ptr as *mut Ptr) = self;".to_string());
+                args_assign.push("*(args_ptr as *mut Ptr) = self.ptr;".to_string());
                 first_time = false;
             }
             for arg in args {
@@ -246,7 +255,9 @@ impl SourceGenerator {
 
         // generate getter
         if self.pass_vis(&property.getter_visibility) {
-            self.bindings_block.push_str("\tfn get_");
+            self.bindings_block.push('\t');
+            self.gen_vis(&property.getter_visibility);
+            self.bindings_block.push_str("fn get_");
             self.bindings_block.push_str(prop_name);
             self.bindings_block.push_str("(&self) -> ");
             self.bindings_block.push_str(prop_type_name);
@@ -276,9 +287,7 @@ impl SourceGenerator {
                 self.bindings_block.push_str(prop_type_name);
                 self.bindings_block.push_str(" = ");
                 self.bindings_block.push_str(&getter_name);
-                self.bindings_block.push_str(".unwrap()(self as *const ");
-                self.bindings_block.push_str(parent_type_name);
-                self.bindings_block.push_str(" as Ptr) as *mut ");
+                self.bindings_block.push_str(".unwrap()(self.ptr) as *mut ");
                 self.bindings_block.push_str(prop_type_name);
                 self.bindings_block.push_str(";\n\t\t\tif !raw_ptr.is_null() {\n\t\t\t\t\
                 *Box::from_raw(raw_ptr)\n\t\t\t} else {\n\t\t\t\t\
@@ -292,7 +301,9 @@ impl SourceGenerator {
         // generate setter
         if let Some(setter_vis) = property.setter_visibility {
             if self.pass_vis(&setter_vis) {
-                self.bindings_block.push_str("\tfn set_");
+                self.bindings_block.push('\t');
+                self.gen_vis(&setter_vis);
+                self.bindings_block.push_str("fn set_");
                 self.bindings_block.push_str(prop_name);
                 self.bindings_block.push_str("(&mut self, value: ");
                 self.bindings_block.push_str(prop_type_name);
@@ -324,9 +335,7 @@ impl SourceGenerator {
                     // implement body
                     self.bindings_block.push_str(" {\n\t\tunsafe { ");
                     self.bindings_block.push_str(&setter_name);
-                    self.bindings_block.push_str(".unwrap()(self as *mut ");
-                    self.bindings_block.push_str(parent_type_name);
-                    self.bindings_block.push_str(" as Ptr, &value as *const ");
+                    self.bindings_block.push_str(".unwrap()(self.ptr, &value as *const ");
                     self.bindings_block.push_str(prop_type_name);
                     self.bindings_block.push_str(" as Ptr); }\n\t}\n");
                 }
@@ -339,36 +348,41 @@ impl SourceGenerator {
 
     /// Returns constructor's function name
     fn gen_ctor(&mut self, ctor: &Constructor, index: u32, type_name: &str) -> String {
-        let ctor_load_name = format!("{}_ctor{}", type_name, index);
-        self.statics_block.push_str(
-            &format!("static mut {}: Option<Fn> = None;\n", ctor_load_name)
-        );
-        self.load_body.push_str(
-            &format!("{} = Some({}_type.get_ctor({}).clone());\n", ctor_load_name, type_name, index)
-        );
+        if self.pass_vis(&ctor.vis) {
+            let ctor_load_name = format!("{}_ctor{}", type_name, index);
+            self.statics_block.push_str(
+                &format!("static mut {}: Option<Fn> = None;\n", ctor_load_name)
+            );
+            self.load_body.push_str(
+                &format!("{} = Some({}_type.get_ctor({}).clone());\n", ctor_load_name, type_name, index)
+            );
 
-        let ctor_name = if let Some(ctor_fn_name) = RUST_STD_LIB.get_fn_name(&ctor.attrs) {
-            // get name from ConstructorFnName attribute if it exists
-            ctor_fn_name
-        } else {
-            // or create something like 'new0'
-            [self.config.ctor_name.clone(), index.to_string()].concat()
-        };
-        self.bindings_block.push_str("\tfn ");
-        self.bindings_block.push_str(&ctor_name);
-        self.bindings_block.push('(');
-        self.bindings_block.push_str(&get_args(&ctor.args));
-        self.bindings_block.push_str(
-            &format!(") -> Self {{\n\t\tunsafe {{\n\t\t\tif let Some(ctor_func) = {} {{", ctor_load_name)
-        );
-        // we don't join these two bindings' push_str calls into one because self.gen_args()
-        // called below in format generating code to bindings block between these two
-        let args = self.gen_args(&ctor.args, false);
-        self.bindings_block.push_str(
-            &format!(r#"
+            let ctor_name = if let Some(ctor_fn_name) = RUST_STD_LIB.get_fn_name(&ctor.attrs) {
+                // get name from ConstructorFnName attribute if it exists
+                ctor_fn_name
+            } else {
+                // or create something like 'new0'
+                [self.config.ctor_name.clone(), index.to_string()].concat()
+            };
+            self.bindings_block.push('\t');
+            self.gen_vis(&ctor.vis);
+            self.bindings_block.push_str("fn ");
+            self.bindings_block.push_str(&ctor_name);
+            self.bindings_block.push('(');
+            self.bindings_block.push_str(&get_args(&ctor.args));
+            self.bindings_block.push_str(
+                &format!(") -> Self {{\n\t\tunsafe {{\n\t\t\tif let Some(ctor_func) = {} {{", ctor_load_name)
+            );
+            // we don't join these two bindings' push_str calls into one because self.gen_args()
+            // called below in format generating code to bindings block between these two
+            let args = self.gen_args(&ctor.args, false);
+            self.bindings_block.push_str(
+                &format!(r#"
                 let this = ctor_func({});
                 if !this.is_null() {{
-                    *Box::from_raw(this as *mut {})
+                    Self {{
+                        ptr: this
+                    }}
                 }} else {{
                     panic!("Pointer of constructor result is null")
                 }}
@@ -378,9 +392,13 @@ impl SourceGenerator {
             }}
         }}
     }}
-"#, args, type_name)
-        );
-        ctor_name
+"#, args)
+            );
+            ctor_name
+        }
+        else {
+            "<ERRROR CONSTRUCTOR NAME>".to_string()
+        }
     }
 
     fn gen_drop(&mut self, t: &Type, type_load_name: &str) {
@@ -434,13 +452,8 @@ impl SourceGenerator {
                 if t.generics.0.len() > 0 {
                     continue; // we can't resolve generics for now
                 }
+                self.gen_vis(&t.vis);
 
-                if t.vis == Visibility::Public {
-                    self.bindings_block.push_str("pub ");
-                }
-                else {
-                    self.bindings_block.push_str("pub(crate) ");
-                }
                 match &t.kind {
                     TypeKind::Class(is_sealed, ctors, props, methods, parents) => {
                         let class_load_name = self.add_load_type(&t);
