@@ -8,7 +8,7 @@ mod bindings;
 fn main() {
     unsafe {
         // load dynamic library and tangara functions from them
-        let lib = libloading::Library::new("mylib").unwrap();
+        let lib = libloading::Library::new("mylib").expect("Loading mylib dynamic library gets errors");
         let tgload: Symbol<unsafe extern fn(&mut Context)> = lib.get(b"tgLoad").unwrap();
         {
             // bindings can works further even without keeping tangara context in memory

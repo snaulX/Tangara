@@ -43,10 +43,12 @@ impl RustStdLib {
         let mut mutable_attribute = create_class(rust_std.clone(), "Mutable");
         let mut reference_attribute = create_class(rust_std.clone(), "Reference");
         let mut lifetime_attribute = create_class(rust_std.clone(), "Lifetime");
-        lifetime_attribute.add_property(TypeRef::from("String"), "Name")
+        lifetime_attribute.add_property(TypeRef::from("String"), "Lifetime")
             .setter_visibility(Visibility::Public).build();
         let mut lifetime_generic_attribute = create_class(rust_std.clone(), "LifetimeGeneric");
-        lifetime_generic_attribute.add_property(TypeRef::from("String"), "Name")
+        lifetime_generic_attribute.add_property(TypeRef::from("String"), "Bounded")
+            .setter_visibility(Visibility::Public).build();
+        lifetime_generic_attribute.add_property(TypeRef::from("String"), "Lifetime")
             .setter_visibility(Visibility::Public).build();
         let mut constructor_name_attribute = create_class(rust_std.clone(), "ConstructorFnName");
         constructor_name_attribute.add_property(TypeRef::from("String"), "FnName")
@@ -151,9 +153,9 @@ impl RustStdLib {
         attrs.iter().any(|attr| get_typeref_bytes(&attr.0) == tuple_variant_data)
     }
 
-    /// Check attributes on `Lifetime` attribute and returns his 1st value (`Name`) if it exists.
+    /// Check attributes on `Lifetime` attribute and returns his 1st value (`Lifetime`) if it exists.
     pub fn get_lifetime(&self, attrs: &[Attribute]) -> Option<String> {
-        let lifetime_data = get_typeref_bytes(&TypeRef::from(&self.constructor_name_attribute));
+        let lifetime_data = get_typeref_bytes(&TypeRef::from(&self.lifetime_attribute));
         attrs.iter().find_map(|attr| {
             if get_typeref_bytes(&attr.0) == lifetime_data {
                 if let Value::String(name) = &attr.1[0] {
@@ -162,6 +164,46 @@ impl RustStdLib {
             }
             None
         })
+    }
+
+    /// Collect all `Lifetime` attributes and returns these 1st value (`Lifetime`).
+    pub fn get_lifetimes(&self, attrs: &[Attribute]) -> Vec<String> {
+        let lifetime_data = get_typeref_bytes(&TypeRef::from(&self.lifetime_attribute));
+        attrs.iter()
+            .filter(|attr| get_typeref_bytes(&attr.0) == lifetime_data)
+            .map(|attr| {
+                if let Value::String(name) = &attr.1[0] {
+                    name.clone()
+                }
+                else {
+                    String::new()
+                }
+            })
+            .collect()
+    }
+
+    /// Collect all `LifetimeGeneric` attributes and returns these 2st value (`Lifetime`)
+    /// if it's corresponding to the `bound`.
+    pub fn get_generic_lifetimes(&self, attrs: &[Attribute], bound: &str) -> Vec<String> {
+        let lifetime_data = get_typeref_bytes(&TypeRef::from(&self.lifetime_generic_attribute));
+        attrs.iter()
+            .filter(|attr| {
+                if get_typeref_bytes(&attr.0) == lifetime_data {
+                    if let Value::String(bounded) = &attr.1[0] {
+                        return bounded == bound;
+                    }
+                }
+                false
+            })
+            .map(|attr| {
+                if let Value::String(name) = &attr.1[1] {
+                    name.clone()
+                }
+                else {
+                    String::new()
+                }
+            })
+            .collect()
     }
 
     /// Check attributes on `ConstructorFnName` attribute and returns his 1st value (`FnName`) if it exists.

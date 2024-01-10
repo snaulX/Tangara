@@ -12,26 +12,49 @@ pub struct SourceGenerator {
     package_name: String
 }
 
-fn get_generics(generics: &Generics, with_where: bool) -> String {
+fn get_generics(generics: &Generics, attrs: &[Attribute], with_where: bool) -> String {
     let mut name = String::new();
     if generics.0.len() > 0 {
         name.push('<');
+        for lifetime in RUST_STD_LIB.get_lifetimes(&attrs) {
+            name.push_str(&format!("'{}, ", lifetime));
+        }
         for generic in &generics.0 {
             name.push_str(generic);
             if with_where {
+                let lifetimes = RUST_STD_LIB.get_generic_lifetimes(&attrs, generic);
+                if lifetimes.len() > 0{
+                    name.push(':');
+                    for lt in &lifetimes {
+                        name.push_str(&format!("'{} + ", lt));
+                    }
+                    // remove extra ' + ' in the end
+                    name.remove(name.len() - 1);
+                    name.remove(name.len() - 1);
+                    name.remove(name.len() - 1);
+                }
                 let wheres = generics.1.iter().filter(|where_clause| where_clause.0 == *generic);
                 if wheres.clone().count() > 0 {
-                    name.push(':');
+                    if lifetimes.len() > 0 {
+                        // we have lifetimes before wheres
+                        name.push('+');
+                    }
+                    else {
+                        // we don't have lifetimes before wheres, so we don't have ':' now
+                        name.push(':');
+                    }
                     for (_, dep) in wheres {
                         name.push_str(&get_typeref(dep));
                         name.push('+');
                     }
+                    // remove extra '+' in the end
                     name.remove(name.len() - 1);
                 }
             }
-            name.push(',');
+            name.push_str(", ");
         }
-        // remove extra ',' in the end
+        // remove extra ', ' in the end
+        name.remove(name.len() - 1);
         name.remove(name.len() - 1);
         name.push('>');
     }
@@ -41,7 +64,7 @@ fn get_generics(generics: &Generics, with_where: bool) -> String {
 
 fn get_type_name(t: &Type, with_where: bool) -> String {
     let mut name = t.name.clone();
-    name.push_str(&get_generics(&t.generics, with_where));
+    name.push_str(&get_generics(&t.generics, &t.attrs, with_where));
     name
 }
 
@@ -150,17 +173,21 @@ fn get_value(value: &Value) -> String {
 fn get_args(args: &[Argument]) -> String {
     let mut result = String::new();
     for arg in args {
-        // TODO work with attributes: handle lifetimes
+        let lifetime = if let Some(lt) =RUST_STD_LIB.get_lifetime(&arg.0) {
+            format!("'{} ", lt)
+        } else {
+            String::new()
+        };
         let type_prefix = match &arg.3 {
-            ArgumentKind::Default => "",
-            ArgumentKind::DefaultValue(_) => "",
-            ArgumentKind::Out => "&mut ",
-            ArgumentKind::Ref => "&mut ",
-            ArgumentKind::In => "&"
+            ArgumentKind::Default => "".to_string(),
+            ArgumentKind::DefaultValue(_) => "".to_string(),
+            ArgumentKind::Out => format!("&{}mut ", lifetime),
+            ArgumentKind::Ref => format!("&{}mut ", lifetime),
+            ArgumentKind::In => format!("&{}", lifetime)
         };
         result.push_str(&arg.2); // name
         result.push(':');
-        result.push_str(type_prefix);
+        result.push_str(&type_prefix);
         result.push_str(&get_typeref(&arg.1)); // type
         result.push_str(", ");
     }
@@ -492,7 +519,7 @@ impl SourceGenerator {
 
         // implement Drop trait
         self.bindings_block.push_str("\n\nimpl");
-        self.bindings_block.push_str(&get_generics(&t.generics, true));
+        self.bindings_block.push_str(&get_generics(&t.generics, &t.attrs, true));
         self.bindings_block.push_str(" Drop for ");
         self.bindings_block.push_str(&get_type_name(&t, false));
         self.bindings_block.push_str(" {\n\tfn drop(&mut self) {\n\t\tunsafe {\n\t\t\t");
@@ -503,7 +530,7 @@ impl SourceGenerator {
     fn gen_default(&mut self, t: &Type, ctor_name: &str) {
         if self.config.generate_default {
             self.bindings_block.push_str("\n\nimpl");
-            self.bindings_block.push_str(&get_generics(&t.generics, true));
+            self.bindings_block.push_str(&get_generics(&t.generics, &t.attrs, true));
             self.bindings_block.push_str(" Default for ");
             self.bindings_block.push_str(&get_type_name(&t, false));
             self.bindings_block.push_str(" {\n\tfn default() -> Self {\n\t\tunsafe {\n\t\t\t");
@@ -545,7 +572,7 @@ impl SourceGenerator {
 }}
 
 impl{} {} {{
-"#, get_type_name(&t, true), get_generics(&t.generics, true), get_type_name(&t, false)));
+"#, get_type_name(&t, true), get_generics(&t.generics, &t.attrs, true), get_type_name(&t, false)));
                         // first was type name with generics and where Type<T: Kek>
                         // second was generics with where <T: Kek>
                         // third was type name with generics without where Type<T>
@@ -592,7 +619,9 @@ impl{} {} {{
                         self.bindings_block.push_str(&get_type_name(&t, true));
                         self.bindings_block.push_str(" {\n");
                         // TODO implement variants
-                        // TODO implement methods
+                        for method in methods {
+                            self.gen_method(&method, &t.name);
+                        }
                         self.bindings_block.push('}');
                     }
                     TypeKind::Interface(props, methods, parents) => {
@@ -615,7 +644,7 @@ impl{} {} {{
 }}
 
 impl{} {} {{
-"#, get_type_name(&t, true), get_generics(&t.generics, true), get_type_name(&t, false)));
+"#, get_type_name(&t, true), get_generics(&t.generics, &t.attrs, true), get_type_name(&t, false)));
                         // first was type name with generics and where Type<T: Kek>
                         // second was generics with where <T: Kek>
                         // third was type name with generics without where Type<T>
