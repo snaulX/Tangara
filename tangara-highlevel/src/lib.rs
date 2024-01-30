@@ -4,6 +4,9 @@ use serde::{Serialize, Deserialize};
 use xxhash_rust::const_xxh3::const_custom_default_secret;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 
+mod naming;
+pub use naming::*;
+
 #[cfg(feature = "builder")]
 pub mod builder;
 
@@ -344,14 +347,14 @@ pub struct Attribute(pub TypeRef, pub Vec<Value>);
 #[derive(Debug, Clone)]
 pub struct Generics(pub Vec<String>, pub Vec<(String, TypeRef)>);
 
-// TODO add coding conventions field (naming conventions)
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Package {
     pub attrs: Vec<Attribute>,
     pub name: String,
     pub id: u64,
-    pub types: Vec<Type>
+    pub types: Vec<Type>,
+    pub naming: NamingConventions
 }
 
 // TODO add operator overloading (including explicit/implicit convertation)

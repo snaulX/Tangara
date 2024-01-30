@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::{Attribute, generate_package_id, Package, Type, TypeRef, Visibility};
+use crate::{Attribute, generate_package_id, NamingConventions, Package, Type, TypeRef, Visibility};
 
 mod enum_builder;
 mod class_builder;
@@ -67,7 +67,8 @@ pub struct PackageBuilder {
     /// Default visibility for methods
     pub method_visibility: Visibility,
     attrs: Vec<Attribute>,
-    types: Vec<Type>
+    types: Vec<Type>,
+    naming: NamingConventions
 }
 
 impl PackageBuilder {
@@ -81,7 +82,8 @@ impl PackageBuilder {
                 member_visibility: Visibility::Public,
                 method_visibility: Visibility::Public,
                 attrs: vec![],
-                types: vec![]
+                types: vec![],
+                naming: NamingConventions::rust()
             }
         ))
     }
@@ -99,6 +101,15 @@ impl PackageBuilder {
         self.namespace.clone()
     }
 
+    pub fn set_naming(&mut self, naming: NamingConventions) -> &mut Self {
+        self.naming = naming;
+        self
+    }
+
+    pub fn get_naming(&self) -> NamingConventions {
+        self.naming.clone()
+    }
+
     pub fn get_id(&self) -> u64 {
         generate_package_id(&self.name)
     }
@@ -114,6 +125,7 @@ impl PackageBuilder {
             name: self.name.clone(),
             id: self.get_id(),
             types: self.types.to_vec(),
+            naming: self.naming.clone()
         }
     }
 }
