@@ -13,7 +13,10 @@ pub struct Config {
     pub ctor_name: String,
     /// Generate implementation of [Default] trait for structs that have constructor with empty arguments.
     /// Default value: `true`
-    pub generate_default: bool
+    pub generate_default: bool,
+    /// Name of dynamic library's function which loads Tangara data.
+    /// Default value: `"tgLoad"`
+    pub load_name: String
 }
 
 impl Default for Config {
@@ -21,7 +24,8 @@ impl Default for Config {
         Self {
             enable_internal: false,
             ctor_name: "new".to_string(),
-            generate_default: true
+            generate_default: true,
+            load_name: "tgLoad".to_string()
         }
     }
 }

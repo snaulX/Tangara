@@ -350,7 +350,8 @@ use tangara::context::{Context, Ptr, Property};
 "#.to_string();
         let mut tgload_body = self.tgload_body.replace("\n", "\n\t");
         tgload_body.remove(tgload_body.len() - 1); // remove last extra '\t'
-        let tgload = format!("#[no_mangle]\npub extern \"C\" fn tgLoad(ctx: &mut Context) {{\n\t{tgload_body}}}\n");
+        let tgload = format!("#[no_mangle]\npub extern \"C\" fn {}(ctx: &mut Context) {{\n\t{}}}\n",
+                             self.config.load_name, tgload_body);
         std::fs::write(path, String::from_iter([disclaimer, self.use_block, self.bindings_block, tgload]))
     }
 }
