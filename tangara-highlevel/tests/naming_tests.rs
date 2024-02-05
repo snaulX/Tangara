@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use lazy_static::lazy_static;
-    use tangara_highlevel::Naming;
+    use tangara_highlevel::{Naming, NamingConventions};
 
     lazy_static! {
         static ref SNAKE_CASE: Naming = Naming::snake_case();
@@ -10,6 +10,9 @@ mod tests {
         static ref HUNGARIAN_PARAMETER: Naming = Naming::hungarian_parameter();
         static ref CONST_CASE: Naming = Naming::const_case();
         static ref CAMEL_CASE: Naming = Naming::camel_case();
+
+        static ref RUST_NAMING: NamingConventions = NamingConventions::rust();
+        static ref CSHARP_NAMING: NamingConventions = NamingConventions::csharp();
     }
 
     #[test]
@@ -69,5 +72,23 @@ mod tests {
         assert_eq!(hungarian_param, "pMyClass");
         let snake_name = SNAKE_CASE.from(&hungarian_param, &HUNGARIAN_PARAMETER).unwrap();
         assert_eq!(snake_name, "my_class");
+    }
+
+    #[test]
+    fn test_convert_type() {
+        let csharp_my_class = "Tangara.MyClass";
+        let rust_my_class = RUST_NAMING.convert_type(csharp_my_class, &CSHARP_NAMING).unwrap();
+        assert_eq!(rust_my_class, "tangara::MyClass");
+        let csharp_my_class = CSHARP_NAMING.convert_type(&rust_my_class, &RUST_NAMING).unwrap();
+        assert_eq!(csharp_my_class, "Tangara.MyClass");
+    }
+
+    #[test]
+    fn test_convert_package() {
+        let csharp_package = "Tangara.Package";
+        let rust_package = RUST_NAMING.convert_package(csharp_package, &CSHARP_NAMING).unwrap();
+        assert_eq!(rust_package, "tangara-package");
+        let csharp_package = CSHARP_NAMING.convert_package(&rust_package, &RUST_NAMING).unwrap();
+        assert_eq!(csharp_package, "Tangara.Package");
     }
 }

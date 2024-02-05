@@ -1,4 +1,4 @@
-use tangara_highlevel::{Package, TypeRef, Visibility};
+use tangara_highlevel::{NamingConventions, Package, TypeRef, Visibility};
 use tangara_highlevel::builder::*;
 
 #[test]
@@ -7,7 +7,7 @@ fn alpha_engine() {
     // Create Alpha.Window package
     let alphawindow: Package;
     {
-        let builder = PackageBuilder::new("Alpha.Window");
+        let builder = PackageBuilder::new("Alpha.Window", NamingConventions::csharp());
         builder.borrow_mut().set_namespace("Alpha.Window");
         let mut type_builder = create_enum(builder.clone(), "WindowFlags")
             .bitflags();
@@ -65,7 +65,7 @@ fn alpha_engine() {
     // Create AlphaEngine package
     let alphaengine;
     {
-        let builder = PackageBuilder::new("AlphaEngine");
+        let builder = PackageBuilder::new("AlphaEngine", NamingConventions::csharp());
         builder.borrow_mut().set_namespace("Alpha.Engine");
         let mut type_builder = create_interface(builder.clone(), "ISystem");
         type_builder

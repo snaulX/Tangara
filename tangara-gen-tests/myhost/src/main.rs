@@ -1,7 +1,7 @@
 use libloading::Symbol;
 use tangara::context::Context;
 use tangara::runtime::Runtime;
-use crate::bindings::{load_MyLib, MyStruct, TestStruct};
+use crate::bindings::{load_mylib, MyStruct, TestStruct};
 
 mod bindings;
 
@@ -15,7 +15,7 @@ fn main() {
             let mut runtime = Runtime::new(); // runtime need to be more enhanced to support custom allocators and etc.
             let mut context = runtime.use_context();
             tgload(&mut context); // load lib from dll to context
-            load_MyLib(&context); // load bindings from context
+            load_mylib(&context); // load bindings from context
         }
         // use bindings
         // Note: don't move this code out of unsafe because lib gets unloaded and

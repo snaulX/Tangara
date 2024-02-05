@@ -1,18 +1,38 @@
 use std::path::Path;
+use std::string::ToString;
+use once_cell::sync::Lazy;
 use tangara_highlevel::*;
 use crate::rust_generator::Config;
 use crate::RUST_STD_LIB;
 
+static RUST_NAMING: Lazy<NamingConventions> = Lazy::new(|| NamingConventions::rust());
+// We need this list for excluding these types from naming checks (it's not using Pascal Case, so it causes errors)
+static PRIMITIVE_TYPES: [&str; 12] = [
+    "bool",
+    "str",
+    "char",
+    "i8",
+    "u8",
+    "i16",
+    "u16",
+    "i32",
+    "u32",
+    "i64",
+    "u64",
+    "usize",
+];
+
 pub struct SourceGenerator {
     config: Config,
     package: Package,
+    naming: NamingConventions,
     statics_block: String,
     bindings_block: String,
     load_body: String,
     package_name: String
 }
 
-fn get_generics(generics: &Generics, attrs: &[Attribute], with_where: bool) -> String {
+fn get_generics(generics: &Generics, attrs: &[Attribute], naming: &NamingConventions, with_where: bool) -> String {
     let mut name = String::new();
     if generics.0.len() > 0 {
         name.push('<');
@@ -44,7 +64,7 @@ fn get_generics(generics: &Generics, attrs: &[Attribute], with_where: bool) -> S
                         name.push(':');
                     }
                     for (_, dep) in wheres {
-                        name.push_str(&get_typeref(dep));
+                        name.push_str(&get_typeref(dep, naming));
                         name.push('+');
                     }
                     // remove extra '+' in the end
@@ -62,27 +82,37 @@ fn get_generics(generics: &Generics, attrs: &[Attribute], with_where: bool) -> S
     name
 }
 
-fn get_type_name(t: &Type, with_where: bool) -> String {
-    let mut name = t.name.clone();
-    name.push_str(&get_generics(&t.generics, &t.attrs, with_where));
+fn get_type_name(t: &Type, naming: &NamingConventions, with_where: bool) -> String {
+    let mut name = if let &TypeKind::Interface(..) = &t.kind {
+        RUST_NAMING.interface.from(&t.name, &naming.interface).unwrap()
+    } else {
+        RUST_NAMING.base_type.from(&t.name, &naming.base_type).unwrap()
+    };
+    name.push_str(&get_generics(&t.generics, &t.attrs, naming, with_where));
     name
 }
 
-fn get_typeref(typeref: &TypeRef) -> String {
+fn get_typeref(typeref: &TypeRef, naming: &NamingConventions) -> String {
     let mut name = String::new();
     match typeref {
         TypeRef::Name(type_name) => {
-            // replace '.' from namespaces for '::' for Rust modules
-            name.push_str(&type_name.replace(".", "::"));
+            // if it's a primitive type (so it doesn't follow a pascal case), we don't check naming
+            if PRIMITIVE_TYPES.contains(&type_name.as_str()) {
+                name.push_str(type_name);
+            }
+            else {
+                let converted = RUST_NAMING.convert_type(type_name, naming).unwrap();
+                name.push_str(&converted);
+            }
         }
         TypeRef::Id(id) => {
             // TODO resolve type
         }
         TypeRef::Generic(parent, generics) => {
-            name.push_str(&get_typeref(parent));
+            name.push_str(&get_typeref(parent, naming));
             name.push('<');
             for generic in generics {
-                name.push_str(&get_typeref(generic));
+                name.push_str(&get_typeref(generic, naming));
                 name.push(',');
             }
             if generics.len() > 0 {
@@ -94,7 +124,7 @@ fn get_typeref(typeref: &TypeRef) -> String {
         TypeRef::Tuple(types) => {
             name.push('(');
             for t in types {
-                name.push_str(&get_typeref(t));
+                name.push_str(&get_typeref(t, naming));
                 name.push(',');
             }
             if types.len() > 0 {
@@ -106,7 +136,7 @@ fn get_typeref(typeref: &TypeRef) -> String {
         TypeRef::Fn(ret_type, args) => {
             name.push_str("fn(");
             for arg in args {
-                name.push_str(&get_typeref(arg));
+                name.push_str(&get_typeref(arg, naming));
                 name.push(',');
             }
             if args.len() > 0 {
@@ -116,7 +146,7 @@ fn get_typeref(typeref: &TypeRef) -> String {
             name.push(')');
             if let Some(return_type) = ret_type {
                 name.push_str(" -> ");
-                name.push_str(&get_typeref(return_type));
+                name.push_str(&get_typeref(return_type, naming));
             }
         }
     }
@@ -170,10 +200,10 @@ fn get_value(value: &Value) -> String {
     }
 }
 
-fn get_args(args: &[Argument]) -> String {
+fn get_args(args: &[Argument], naming: &NamingConventions) -> String {
     let mut result = String::new();
     for arg in args {
-        let lifetime = if let Some(lt) =RUST_STD_LIB.get_lifetime(&arg.0) {
+        let lifetime = if let Some(lt) = RUST_STD_LIB.get_lifetime(&arg.0) {
             format!("'{} ", lt)
         } else {
             String::new()
@@ -185,10 +215,10 @@ fn get_args(args: &[Argument]) -> String {
             ArgumentKind::Ref => format!("&{}mut ", lifetime),
             ArgumentKind::In => format!("&{}", lifetime)
         };
-        result.push_str(&arg.2); // name
+        result.push_str(&RUST_NAMING.parameter.from(&arg.2, &naming.parameter).unwrap()); // name
         result.push(':');
         result.push_str(&type_prefix);
-        result.push_str(&get_typeref(&arg.1)); // type
+        result.push_str(&get_typeref(&arg.1, naming)); // type
         result.push_str(", ");
     }
     if args.len() > 0 {
@@ -202,10 +232,14 @@ fn get_args(args: &[Argument]) -> String {
 
 impl SourceGenerator {
     pub(crate) fn new(package: Package, config: Config) -> Self {
-        let package_name = format!("{}_package", package.name);
+        let mut package_naming = NamingConventions::rust();
+        package_naming.package_divider = "_".to_string();
+        let package_name = format!("{}_package", package_naming.convert_package(&package.name, &package.naming).unwrap());
+        let naming = package.naming.clone();
         Self {
             config,
             package,
+            naming,
             statics_block: String::new(),
             bindings_block: String::new(),
             load_body: String::new(),
@@ -245,7 +279,7 @@ impl SourceGenerator {
                     ArgumentKind::Ref => "&mut ",
                     ArgumentKind::In => "&"
                 }.to_string();
-                let arg_type = [type_prefix, get_typeref(&arg.1)].concat();
+                let arg_type = [type_prefix, get_typeref(&arg.1, &self.naming)].concat();
                 if args_size.len() == 0 {
                     args_assign.push(format!("*(args_ptr as *mut {}) = {};", arg_type, arg.2));
                 } else {
@@ -270,10 +304,14 @@ impl SourceGenerator {
         }
     }
 
-    /// Note: set `type_name` to None if you want generate property functions without a body.
+    /// Note: set `type_name` to None if you want to generate property functions without a body.
     fn gen_property(&mut self, property: &Property, type_name: Option<&str>) {
-        let prop_name = &property.name;
-        let prop_type_name = &get_typeref(&property.prop_type);
+        let prop_name = &if property.getter_visibility == Visibility::Public {
+            RUST_NAMING.property.from(&property.name, &self.naming.property)
+        } else {
+            RUST_NAMING.private_field.from(&property.name, &self.naming.private_field)
+        }.unwrap();
+        let prop_type_name = &get_typeref(&property.prop_type, &self.naming);
         let mut prop_load_name = None;
 
         // generate getter
@@ -392,7 +430,7 @@ impl SourceGenerator {
             self.bindings_block.push_str("fn ");
             self.bindings_block.push_str(&ctor_name);
             self.bindings_block.push('(');
-            self.bindings_block.push_str(&get_args(&ctor.args));
+            self.bindings_block.push_str(&get_args(&ctor.args, &self.naming));
             self.bindings_block.push_str(
                 &format!(") -> Self {{\n\t\tunsafe {{\n\t\t\tif let Some(ctor_func) = {} {{", ctor_load_name)
             );
@@ -426,7 +464,7 @@ impl SourceGenerator {
 
     fn gen_method(&mut self, method: &Method, type_name: &str) {
         if self.pass_vis(&method.vis) {
-            let method_name = &method.name;
+            let method_name = &RUST_NAMING.method.from(&method.name, &self.naming.method).unwrap();
 
             self.bindings_block.push('\t');
             // aware that if method is abstract - it's for traits, so it can't have visibility modifier
@@ -435,7 +473,7 @@ impl SourceGenerator {
             }
             let (return_type, return_type_block) = if let Some(ret_type) = &method.return_type {
                 let prefix = RUST_STD_LIB.get_return_prefix(&method.attrs).unwrap_or_default();
-                let core = [prefix, get_typeref(ret_type)].concat();
+                let core = [prefix, get_typeref(ret_type, &self.naming)].concat();
                 (core.clone(), [" -> ", &core].concat())
             } else {
                 (String::new(), String::new())
@@ -456,9 +494,9 @@ impl SourceGenerator {
                 "self"
             };
             let args_block = if self_block.len() > 0 && method.args.len() > 0 {
-                [self_block, ", ", &get_args(&method.args)].concat()
+                [self_block, ", ", &get_args(&method.args, &self.naming)].concat()
             } else {
-                [self_block, &get_args(&method.args)].concat()
+                [self_block, &get_args(&method.args, &self.naming)].concat()
             };
             self.bindings_block.push_str(
                 &format!("fn {method_name}({args_block}){return_type_block}")
@@ -519,9 +557,9 @@ impl SourceGenerator {
 
         // implement Drop trait
         self.bindings_block.push_str("\n\nimpl");
-        self.bindings_block.push_str(&get_generics(&t.generics, &t.attrs, true));
+        self.bindings_block.push_str(&get_generics(&t.generics, &t.attrs, &self.naming, true));
         self.bindings_block.push_str(" Drop for ");
-        self.bindings_block.push_str(&get_type_name(&t, false));
+        self.bindings_block.push_str(&get_type_name(&t, &self.naming, false));
         self.bindings_block.push_str(" {\n\tfn drop(&mut self) {\n\t\tunsafe {\n\t\t\t");
         self.bindings_block.push_str(&dtor_name);
         self.bindings_block.push_str(".expect(\"Destructor wasn't loaded from library\")(self.ptr);\n\t\t}\n\t}\n}");
@@ -530,9 +568,9 @@ impl SourceGenerator {
     fn gen_default(&mut self, t: &Type, ctor_name: &str) {
         if self.config.generate_default {
             self.bindings_block.push_str("\n\nimpl");
-            self.bindings_block.push_str(&get_generics(&t.generics, &t.attrs, true));
+            self.bindings_block.push_str(&get_generics(&t.generics, &t.attrs, &self.naming, true));
             self.bindings_block.push_str(" Default for ");
-            self.bindings_block.push_str(&get_type_name(&t, false));
+            self.bindings_block.push_str(&get_type_name(&t, &self.naming, false));
             self.bindings_block.push_str(" {\n\tfn default() -> Self {\n\t\tunsafe {\n\t\t\t");
             self.bindings_block.push_str(&t.name);
             self.bindings_block.push_str("::");
@@ -572,7 +610,11 @@ impl SourceGenerator {
 }}
 
 impl{} {} {{
-"#, get_type_name(&t, true), get_generics(&t.generics, &t.attrs, true), get_type_name(&t, false)));
+"#,
+                                                              get_type_name(&t, &self.naming, true),
+                                                              get_generics(&t.generics, &t.attrs, &self.naming, true),
+                                                              get_type_name(&t, &self.naming, false)
+                        )); // end of push_str(format!(/*..*/));
                         // first was type name with generics and where Type<T: Kek>
                         // second was generics with where <T: Kek>
                         // third was type name with generics without where Type<T>
@@ -606,7 +648,7 @@ impl{} {} {{
                         }; // index to insert attributes before 'pub ' or 'pub(crate) '
                         self.bindings_block.insert_str(index_before_vis, "#[derive(Ord, PartialOrd, Hash, Eq, PartialEq, Debug, Copy, Clone)]\n");
                         self.bindings_block.push_str("enum ");
-                        self.bindings_block.push_str(&get_type_name(&t, true));
+                        self.bindings_block.push_str(&get_type_name(&t, &self.naming, true));
                         self.bindings_block.push_str(" {\n");
                         for v in variants {
                             self.bindings_block.push_str(&format!("\t{} = {},\n", &v.0, &get_value(&v.1)));
@@ -616,7 +658,7 @@ impl{} {} {{
                     TypeKind::EnumClass(variants, methods) => {
                         let enum_load_name = self.add_load_type(&t);
                         self.bindings_block.push_str("enum ");
-                        self.bindings_block.push_str(&get_type_name(&t, true));
+                        self.bindings_block.push_str(&get_type_name(&t, &self.naming, true));
                         self.bindings_block.push_str(" {\n");
                         // TODO implement variants
                         for method in methods {
@@ -627,7 +669,7 @@ impl{} {} {{
                     TypeKind::Interface(props, methods, parents) => {
                         // TODO implement parents
                         self.bindings_block.push_str("trait ");
-                        self.bindings_block.push_str(&get_type_name(&t, true));
+                        self.bindings_block.push_str(&get_type_name(&t, &self.naming, true));
                         self.bindings_block.push_str(" {\n");
                         for method in methods {
                             self.gen_method(&method, &t.name);
@@ -644,7 +686,11 @@ impl{} {} {{
 }}
 
 impl{} {} {{
-"#, get_type_name(&t, true), get_generics(&t.generics, &t.attrs, true), get_type_name(&t, false)));
+"#,
+                                                              get_type_name(&t, &self.naming, true),
+                                                              get_generics(&t.generics, &t.attrs, &self.naming, true),
+                                                              get_type_name(&t, &self.naming, false)
+                        )); // end of push_str(format!(/*..*/));
                         // first was type name with generics and where Type<T: Kek>
                         // second was generics with where <T: Kek>
                         // third was type name with generics without where Type<T>
@@ -670,8 +716,10 @@ impl{} {} {{
                     }
                     TypeKind::TypeAlias(alias) => {
                         self.bindings_block.push_str(
-                            &format!("type {} = {};", get_type_name(&t, true), get_typeref(&alias))
-                        );
+                            &format!("type {} = {};",
+                                     get_type_name(&t, &self.naming, true),
+                                     get_typeref(&alias, &self.naming)
+                            ));
                     }
                 }
                 self.bindings_block.push('\n');

@@ -211,6 +211,15 @@ impl Naming {
         [self.prefix.clone(), result, self.suffix.clone()].concat()
     }
 
+    /// Convert given name from given naming to `self` naming and return resulted string.
+    /// If name doesn't follow `naming`, it returns [NamingError].
+    ///
+    /// ### Example
+    /// ```rs
+    /// let camel_name = "myClass";
+    /// let pascal_name = PASCAL_CASE.from(camel_name, &CAMEL_CASE).unwrap();
+    /// assert_eq!(pascal_name, "MyClass");
+    /// ```
     pub fn from(&self, name: &str, naming: &Naming) -> Result<String, NamingError> {
         let parts_result = naming.to_parts(name)?;
         Ok(self.from_parts(parts_result.as_slice()))
@@ -221,7 +230,13 @@ impl Naming {
 #[derive(Debug, Clone)]
 pub struct NamingConventions {
     pub package: Naming,
+    /// String that's using to connect parts of package naming
+    /// Like '-' in 'tangara-highlevel'
+    pub package_divider: String,
     pub namespace: Naming,
+    /// String that's using to connect parts of namespace
+    /// Like '::' in Rust/C++ or '.' in C#/Java
+    pub namespace_divider: String,
     pub base_type: Naming,
     pub interface: Naming,
     pub private_field: Naming,
@@ -230,13 +245,17 @@ pub struct NamingConventions {
     pub property: Naming,
     /// Enum variant's naming convention
     pub variant: Naming,
+    /// Naming of method's or constructor's parameter
+    pub parameter: Naming,
 }
 
 impl NamingConventions {
     pub fn rust() -> Self {
         Self {
             package: Naming::snake_case(),
+            package_divider: "-".to_string(),
             namespace: Naming::snake_case(),
+            namespace_divider: "::".to_string(),
             base_type: Naming::pascal_case(),
             interface: Naming::pascal_case(),
             private_field: Naming::snake_case(),
@@ -244,6 +263,7 @@ impl NamingConventions {
             method: Naming::snake_case(),
             property: Naming::snake_case(),
             variant: Naming::pascal_case(),
+            parameter: Naming::snake_case(),
         }
     }
 
@@ -256,7 +276,9 @@ impl NamingConventions {
         private_static.prefix = "s_".to_string();
         Self {
             package: Naming::pascal_case(),
+            package_divider: ".".to_string(),
             namespace: Naming::pascal_case(),
+            namespace_divider: ".".to_string(),
             base_type: Naming::pascal_case(),
             interface,
             private_field: private_member,
@@ -264,6 +286,29 @@ impl NamingConventions {
             method: Naming::pascal_case(),
             property: Naming::pascal_case(),
             variant: Naming::pascal_case(),
+            parameter: Naming::camel_case(),
         }
+    }
+
+    /// Convert type with its namespace from given to `self` naming
+    pub fn convert_type(&self, name: &str, naming: &NamingConventions) -> Result<String, NamingError> {
+        let mut name_parts = name.split(&naming.namespace_divider)
+            .map(|part| part.to_string()) // map from soyjak '&str' to chad 'String'
+            .collect::<Vec<String>>();
+        for i in 0..name_parts.len() - 1 {
+            name_parts[i] = self.namespace.from(&name_parts[i], &naming.namespace)?;
+        }
+        let type_name = name_parts.last_mut().expect("At least one part of name must exists");
+        *type_name = self.base_type.from(type_name, &naming.base_type)?; // FIXME: maybe it's interface
+        Ok(name_parts.join(&self.namespace_divider))
+    }
+
+    pub fn convert_package(&self, name: &str, naming: &NamingConventions) -> Result<String, NamingError> {
+        let mut parts = vec![];
+        for part in name.split(&naming.package_divider) {
+            let converted = self.package.from(part, &naming.package)?;
+            parts.push(converted);
+        }
+        Ok(parts.join(&self.package_divider))
     }
 }

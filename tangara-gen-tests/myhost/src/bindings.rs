@@ -212,21 +212,21 @@ impl Drop for MyStruct {
 }
 
 
-pub fn load_MyLib(ctx: &Context) {
+pub fn load_mylib(ctx: &Context) {
 	unsafe {
-		let MyLib_package = ctx.get_package(17442259264759129316);
-		let EnumTuple_type = MyLib_package.get_type(4625095818019192178);
-		let EnumStruct_type = MyLib_package.get_type(14304033509570757938);
-		let EnumMixed_type = MyLib_package.get_type(5027534704753303560);
-		let EnumComplex_type = MyLib_package.get_type(7898830565185017404);
-		let TestStruct_type = MyLib_package.get_type(662889698570043466);
+		let mylib_package = ctx.get_package(14252210530948059848);
+		let EnumTuple_type = mylib_package.get_type(5703501090477233855);
+		let EnumStruct_type = mylib_package.get_type(4061653529057324328);
+		let EnumMixed_type = mylib_package.get_type(6533684593556827468);
+		let EnumComplex_type = mylib_package.get_type(5514888211111417365);
+		let TestStruct_type = mylib_package.get_type(5562349104188291914);
 		TestStruct_ctor0 = Some(TestStruct_type.get_ctor(0).clone());
 		TestStruct_ctor1 = Some(TestStruct_type.get_ctor(1).clone());
 		let TestStruct_id_prop = TestStruct_type.get_property(5824848936401749885);
 		TestStruct_id_getter = Some(TestStruct_id_prop.getter);
 		TestStruct_id_setter = Some(TestStruct_id_prop.setter.unwrap());
 		TestStruct_dtor = Some(TestStruct_type.get_dtor());
-		let MyStruct_type = MyLib_package.get_type(575532125808595608);
+		let MyStruct_type = mylib_package.get_type(11184697179514631841);
 		MyStruct_ctor0 = Some(MyStruct_type.get_ctor(0).clone());
 		MyStruct_repeat_name = Some(MyStruct_type.get_method(17567713076779176127).clone());
 		MyStruct_set_name = Some(MyStruct_type.get_method(1641961565049420977).clone());

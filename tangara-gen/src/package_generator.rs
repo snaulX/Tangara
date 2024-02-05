@@ -6,7 +6,7 @@ use std::rc::Rc;
 use syn::*;
 use syn::punctuated::Punctuated;
 use tangara_highlevel::builder::*;
-use tangara_highlevel::{Attribute, MethodKind, Package, TypeKind, TypeRef, Value, Visibility as TgVis};
+use tangara_highlevel::{Attribute, MethodKind, NamingConventions, Package, TypeKind, TypeRef, Value, Visibility as TgVis};
 use crate::RUST_STD_LIB;
 
 pub struct Config {
@@ -431,7 +431,7 @@ impl PackageGenerator {
     pub fn new(package_name: &str, config: Config) -> Self {
         Self {
             config,
-            package_builder: PackageBuilder::new(package_name),
+            package_builder: PackageBuilder::new(package_name, NamingConventions::rust()),
             structs: HashMap::new()
         }
     }

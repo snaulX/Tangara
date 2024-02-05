@@ -72,18 +72,18 @@ pub struct PackageBuilder {
 }
 
 impl PackageBuilder {
-    pub fn new(name: &str) -> Rc<RefCell<Self>> {
+    pub fn new(name: &str, naming: NamingConventions) -> Rc<RefCell<Self>> {
         Rc::new(RefCell::new(
             Self {
                 name: name.to_string(),
-                namespace: name.to_string(),
+                namespace: naming.namespace.from(name, &naming.package).unwrap(),
                 type_visibility: Visibility::Public,
                 constructor_visibility: Visibility::Public,
                 member_visibility: Visibility::Public,
                 method_visibility: Visibility::Public,
                 attrs: vec![],
                 types: vec![],
-                naming: NamingConventions::rust()
+                naming
             }
         ))
     }
@@ -102,6 +102,9 @@ impl PackageBuilder {
     }
 
     pub fn set_naming(&mut self, naming: NamingConventions) -> &mut Self {
+        self.name = naming.package.from(&self.name, &self.naming.package).unwrap();
+        self.namespace = naming.namespace.from(&self.namespace, &self.naming.namespace).unwrap();
+        // TODO change types naming
         self.naming = naming;
         self
     }

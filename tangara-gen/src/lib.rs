@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use tangara_highlevel::{Attribute, get_typeref_bytes, Package, Type, TypeRef, Value, Visibility};
+use tangara_highlevel::{Attribute, get_typeref_bytes, NamingConventions, Package, Type, TypeRef, Value, Visibility};
 use tangara_highlevel::builder::{create_class, PackageBuilder, TypeBuilder};
 
 mod package_generator;
@@ -29,7 +29,7 @@ pub struct RustStdLib {
 
 impl RustStdLib {
     pub(crate) fn new() -> Self {
-        let mut rust_std = PackageBuilder::new("Tangara.Rust");
+        let mut rust_std = PackageBuilder::new("Tangara.Rust", NamingConventions::csharp());
         {
             let mut rust_std_ref = rust_std.borrow_mut();
             rust_std_ref.type_visibility = Visibility::Public;
