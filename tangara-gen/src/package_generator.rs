@@ -458,6 +458,7 @@ impl PackageGenerator {
                             variant_builder.add_attribute(RUST_STD_LIB.tuple_variant_attribute());
                         }
                         for field in &variant.fields {
+                            // TODO implement fields
                             let field_name = if let Some(field_ident) = &field.ident {
                                 field_ident.to_string()
                             }
@@ -697,6 +698,7 @@ impl PackageGenerator {
                 if generate_pub_fields {
                     let mut count = 0;
                     for field in &struct_item.fields {
+                        // TODO replace it with fields
                         if let Visibility::Public(_) = field.vis {
                             let field_name = if let Some(field_ident) = &field.ident {
                                 field_ident.to_string()
@@ -816,13 +818,22 @@ impl PackageGenerator {
     pub fn generate(self) -> Package {
         for (_, cb) in self.structs {
             let result = cb.get_type();
-            if let TypeKind::Class(_, ctors, props, methods, parents) = &result.kind {
+            if let TypeKind::Class {
+                is_sealed: _is_sealed,
+                constructors,
+                properties,
+                methods,
+                parents
+            } = &result.kind {
                 let mut builder = self.package_builder.borrow_mut();
                 builder.add_type(
                     // Change type's kind on Struct if it's possible
                     if methods.len() == 0 && parents.len() == 0 {
                         let mut result = result.clone();
-                        result.kind = TypeKind::Struct(ctors.to_vec(), props.to_vec());
+                        result.kind = TypeKind::Struct {
+                            constructors: constructors.to_vec(),
+                            properties: properties.to_vec()
+                        };
                         result
                     }
                     else {

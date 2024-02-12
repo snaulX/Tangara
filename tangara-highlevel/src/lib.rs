@@ -38,38 +38,32 @@ pub enum ArgumentKind {
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub enum TypeKind {
-    Class(
-        /// Sealed or not
-        bool,
-        /// Constructors
-        Vec<Constructor>,
-        /// Properties
-        Vec<Property>,
-        /// Methods
-        Vec<Method>,
-        /// Parents
-        Vec<TypeRef>
-    ),
-    Enum(
+    Class {
+        is_sealed: bool,
+        constructors: Vec<Constructor>,
+        properties: Vec<Property>,
+        methods: Vec<Method>,
+        parents: Vec<TypeRef>
+    },
+    Enum {
         /// Variants: Name = Value
-        Vec<(String, Value)>
-    ),
-    EnumClass(
+        variants: Vec<(String, Value)>
+    },
+    EnumClass {
         /// Variants: Name(Properties)
-        Vec<Variant>,
-        /// Methods
-        Vec<Method>
-    ),
-    Interface(
-        /// Properties
-        Vec<Property>,
-        /// Methods
-        Vec<Method>,
-        /// Parents
-        Vec<TypeRef>
-    ),
-    /// Data type that contains only data
-    Struct(Vec<Constructor>, Vec<Property>),
+        variants: Vec<Variant>,
+        methods: Vec<Method>
+    },
+    Interface {
+        properties: Vec<Property>,
+        methods: Vec<Method>,
+        parents: Vec<TypeRef>
+    },
+    /// Type's kind that contains only data
+    Struct {
+        constructors: Vec<Constructor>,
+        properties: Vec<Property>
+    },
     TypeAlias(Box<TypeRef>)
 }
 
@@ -379,6 +373,16 @@ pub struct Constructor {
     pub args: Vec<Argument>
 }
 
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
+pub struct Field {
+    pub attrs: Vec<Attribute>,
+    pub vis: Visibility,
+    pub field_type: TypeRef,
+    pub name: String,
+    pub id: u64
+}
+
 // TODO add "init" - setter only in constructor
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
@@ -404,6 +408,7 @@ pub struct Method {
     pub kind: MethodKind
 }
 
+/// Rust-like variant for 'enum class', can contain properties
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Variant {

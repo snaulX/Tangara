@@ -68,7 +68,9 @@ impl TypeBuilder for EnumBuilder {
             name,
             id,
             generics: Generics(vec![], vec![]),
-            kind: Enum(self.variants.clone())
+            kind: Enum {
+                variants: self.variants.clone()
+            }
         }
     }
 
@@ -126,7 +128,9 @@ impl TypeBuilder for BitflagsBuilder {
             name,
             id,
             generics: Generics(vec![], vec![]),
-            kind: Enum(enum_builder.variants.clone())
+            kind: Enum {
+                variants: enum_builder.variants.clone()
+            }
         }
     }
 
@@ -198,7 +202,10 @@ impl TypeBuilder for EnumClassBuilder {
             name,
             id,
             generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
-            kind: EnumClass(self.variants.to_vec(), self.methods.to_vec()),
+            kind: EnumClass {
+                variants: self.variants.to_vec(),
+                methods: self.methods.to_vec()
+            }
         }
     }
 

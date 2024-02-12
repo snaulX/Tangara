@@ -80,11 +80,11 @@ impl TypeBuilder for InterfaceBuilder {
             name,
             id,
             generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
-            kind: Interface(
-                self.properties.to_vec(),
-                self.methods.to_vec(),
-                self.parents.to_vec()
-            )
+            kind: Interface {
+                properties: self.properties.to_vec(),
+                methods: self.methods.to_vec(),
+                parents: self.parents.to_vec()
+            }
         }
     }
 

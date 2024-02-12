@@ -70,7 +70,10 @@ impl TypeBuilder for StructBuilder {
             name,
             id,
             generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
-            kind: Struct(self.constructors.to_vec(), self.properties.to_vec())
+            kind: Struct {
+                constructors: self.constructors.to_vec(),
+                properties: self.properties.to_vec()
+            }
         }
     }
 

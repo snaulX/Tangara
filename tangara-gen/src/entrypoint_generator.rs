@@ -286,25 +286,34 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
             }
             if self.pass_vis(&t.vis) {
                 match &t.kind {
-                    TypeKind::Class(_, ctors, props, methods, _) => {
+                    TypeKind::Class {
+                        is_sealed,
+                        constructors,
+                        properties,
+                        methods,
+                        parents
+                    } => {
                         let type_name = get_type_name(&t);
                         self.tgload_body.push_str(
                             &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
                         );
                         self.gen_dtor(&t);
                         let mut count = 0usize;
-                        for ctor in ctors {
+                        for ctor in constructors {
                             self.gen_ctor(ctor, &t, count);
                             count += 1;
                         }
-                        for prop in props {
+                        for prop in properties {
                             self.gen_property(prop, &t);
                         }
                         for method in methods {
                             self.gen_method(method, &t);
                         }
                     }
-                    TypeKind::EnumClass(variants, methods) => {
+                    TypeKind::EnumClass {
+                        variants,
+                        methods
+                    } => {
                         let type_name = get_type_name(&t);
                         self.tgload_body.push_str(
                             &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
@@ -317,18 +326,21 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                             self.gen_method(method, &t);
                         }
                     }
-                    TypeKind::Struct(ctors, props) => {
+                    TypeKind::Struct {
+                        constructors,
+                        properties
+                    } => {
                         let type_name = get_type_name(&t);
                         self.tgload_body.push_str(
                             &format!("let mut {} = {}.add_type({});\n", type_name, self.package_name, t.id)
                         );
                         self.gen_dtor(&t);
                         let mut count = 0usize;
-                        for ctor in ctors {
+                        for ctor in constructors {
                             self.gen_ctor(ctor, &t, count);
                             count += 1;
                         }
-                        for prop in props {
+                        for prop in properties {
                             self.gen_property(prop, &t);
                         }
                     }

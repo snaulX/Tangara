@@ -83,7 +83,7 @@ fn get_generics(generics: &Generics, attrs: &[Attribute], naming: &NamingConvent
 }
 
 fn get_type_name(t: &Type, naming: &NamingConventions, with_where: bool) -> String {
-    let mut name = if let &TypeKind::Interface(..) = &t.kind {
+    let mut name = if let &TypeKind::Interface { .. } = &t.kind {
         RUST_NAMING.interface.from(&t.name, &naming.interface).unwrap()
     } else {
         RUST_NAMING.base_type.from(&t.name, &naming.base_type).unwrap()
@@ -601,8 +601,9 @@ impl SourceGenerator {
                 self.gen_vis(&t.vis);
 
                 match &t.kind {
-                    TypeKind::Class(is_sealed, ctors, props, methods, parents) => {
+                    TypeKind::Class { is_sealed, constructors, properties, methods, parents} => {
                         let class_load_name = self.add_load_type(&t);
+                        // TODO implement fields
                         // TODO implement parents
                         // TODO do something with 'is_sealed'
                         self.bindings_block.push_str(&format!(r#"struct {} {{
@@ -620,14 +621,14 @@ impl{} {} {{
                         // third was type name with generics without where Type<T>
                         let mut ctor_counter = 0;
                         let mut default_ctor_name = None;
-                        for ctor in ctors {
+                        for ctor in constructors {
                             let ctor_name = self.gen_ctor(&ctor, ctor_counter, &t.name);
                             if ctor.args.len() == 0 {
                                 default_ctor_name = Some(ctor_name);
                             }
                             ctor_counter += 1;
                         }
-                        for prop in props {
+                        for prop in properties {
                             self.gen_property(&prop, Some(&t.name));
                         }
                         for method in methods {
@@ -640,7 +641,7 @@ impl{} {} {{
                             self.gen_default(&t, &ctor_name);
                         }
                     }
-                    TypeKind::Enum(variants) => {
+                    TypeKind::Enum { variants } => {
                         let index_before_vis = self.bindings_block.len() - if t.vis == Visibility::Public {
                             4
                         } else {
@@ -655,7 +656,7 @@ impl{} {} {{
                         }
                         self.bindings_block.push('}');
                     }
-                    TypeKind::EnumClass(variants, methods) => {
+                    TypeKind::EnumClass { variants, methods } => {
                         let enum_load_name = self.add_load_type(&t);
                         self.bindings_block.push_str("enum ");
                         self.bindings_block.push_str(&get_type_name(&t, &self.naming, true));
@@ -666,7 +667,7 @@ impl{} {} {{
                         }
                         self.bindings_block.push('}');
                     }
-                    TypeKind::Interface(props, methods, parents) => {
+                    TypeKind::Interface { properties, methods, parents } => {
                         // TODO implement parents
                         self.bindings_block.push_str("trait ");
                         self.bindings_block.push_str(&get_type_name(&t, &self.naming, true));
@@ -674,12 +675,13 @@ impl{} {} {{
                         for method in methods {
                             self.gen_method(&method, &t.name);
                         }
-                        for prop in props {
+                        for prop in properties {
                             self.gen_property(&prop, None);
                         }
                         self.bindings_block.push('}');
                     }
-                    TypeKind::Struct(ctors, props) => {
+                    TypeKind::Struct { constructors, properties } => {
+                        // TODO implement fields
                         let struct_load_name = self.add_load_type(&t);
                         self.bindings_block.push_str(&format!(r#"struct {} {{
     ptr: Ptr
@@ -691,19 +693,20 @@ impl{} {} {{
                                                               get_generics(&t.generics, &t.attrs, &self.naming, true),
                                                               get_type_name(&t, &self.naming, false)
                         )); // end of push_str(format!(/*..*/));
-                        // first was type name with generics and where Type<T: Kek>
-                        // second was generics with where <T: Kek>
-                        // third was type name with generics without where Type<T>
+                        // What's happened in format's arguments:
+                        // first - type name with generics and where Type<T: Kek>
+                        // second - generics with where <T: Kek>
+                        // third - type name with generics without where Type<T>
                         let mut ctor_counter = 0;
                         let mut default_ctor_name = None;
-                        for ctor in ctors {
+                        for ctor in constructors {
                             let ctor_name = self.gen_ctor(&ctor, ctor_counter, &t.name);
                             if ctor.args.len() == 0 {
                                 default_ctor_name = Some(ctor_name);
                             }
                             ctor_counter += 1;
                         }
-                        for prop in props {
+                        for prop in properties {
                             self.gen_property(&prop, Some(&t.name));
                         }
                         self.bindings_block.push('}');

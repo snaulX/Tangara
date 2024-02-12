@@ -93,13 +93,13 @@ impl TypeBuilder for ClassBuilder {
             name,
             id,
             generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
-            kind: Class(
-                self.sealed,
-                self.constructors.to_vec(),
-                self.properties.to_vec(),
-                self.methods.to_vec(),
-                self.parents.to_vec(),
-            )
+            kind: Class {
+                is_sealed: self.sealed,
+                constructors: self.constructors.to_vec(),
+                properties: self.properties.to_vec(),
+                methods: self.methods.to_vec(),
+                parents: self.parents.to_vec(),
+            }
         }
     }
 
