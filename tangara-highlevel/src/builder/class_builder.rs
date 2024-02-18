@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
-use crate::builder::{GenericsCollector, PackageBuilder, TypeBuilder};
+use crate::builder::{FieldBuilder, FieldCollector, GenericsCollector, PackageBuilder, TypeBuilder};
 use crate::*;
 use crate::builder::constructor_builder::*;
 use crate::builder::method_builder::*;
@@ -16,6 +16,9 @@ pub struct ClassBuilder {
     vis: Visibility,
     constructors: Vec<Constructor>,
     properties: Vec<Property>,
+    fields: Vec<Field>,
+    static_properties: Vec<Property>,
+    static_fields: Vec<Field>,
     methods: Vec<Method>,
     parents: Vec<TypeRef>,
     generics: Vec<String>,
@@ -35,6 +38,9 @@ impl ClassBuilder {
             vis,
             constructors: vec![],
             properties: vec![],
+            fields: vec![],
+            static_properties: vec![],
+            static_fields: vec![],
             methods: vec![],
             parents: vec![],
             generics: vec![],
@@ -59,7 +65,19 @@ impl ClassBuilder {
     }
 
     pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
-        PropertyBuilder::new(self, prop_type, name)
+        PropertyBuilder::new(self, false, prop_type, name)
+    }
+    
+    pub fn add_field(&mut self, field_type: TypeRef, name: &str) -> FieldBuilder<Self> {
+        FieldBuilder::new(self, false, field_type, name)
+    }
+
+    pub fn add_static_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
+        PropertyBuilder::new(self, true, prop_type, name)
+    }
+
+    pub fn add_static_field(&mut self, field_type: TypeRef, name: &str) -> FieldBuilder<Self> {
+        FieldBuilder::new(self, true, field_type, name)
     }
 
     pub fn add_method(&mut self, name: &str) -> MethodBuilder<Self> {
@@ -97,6 +115,9 @@ impl TypeBuilder for ClassBuilder {
                 is_sealed: self.sealed,
                 constructors: self.constructors.to_vec(),
                 properties: self.properties.to_vec(),
+                fields: self.fields.to_vec(),
+                static_properties: self.static_properties.to_vec(),
+                static_fields: self.static_fields.to_vec(),
                 methods: self.methods.to_vec(),
                 parents: self.parents.to_vec(),
             }
@@ -147,6 +168,24 @@ impl PropertyCollector for ClassBuilder {
 
     fn add_property(&mut self, property: Property) {
         self.properties.push(property)
+    }
+
+    fn add_static_property(&mut self, property: Property) {
+        self.static_properties.push(property)
+    }
+}
+
+impl FieldCollector for ClassBuilder {
+    fn get_default_visibility(&self) -> Visibility {
+        self.builder.borrow().member_visibility
+    }
+
+    fn add_field(&mut self, field: Field) {
+        self.fields.push(field)
+    }
+
+    fn add_static_field(&mut self, field: Field) {
+        self.static_fields.push(field)
     }
 }
 

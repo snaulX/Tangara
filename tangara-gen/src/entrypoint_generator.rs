@@ -236,14 +236,60 @@ pub extern "C" fn {}(this: Ptr, object: Ptr) {{
         }
     }
 
+    fn gen_field(&mut self, field: &Field, t: &Type) {
+        if self.pass_vis(&prop.getter_visibility) {
+            let is_field = RUST_STD_LIB.is_struct_field(&prop.attrs);
+            let get_code = if is_field {
+                prop.name.clone()
+            } else {
+                format!("get_{}()", prop.name)
+            };
+            let getter_name = format!("{}_get_{}", t.name, prop.name);
+            self.bindings_block.push_str(
+                &format!(r#"
+pub extern "C" fn {}(this: Ptr) -> Ptr {{
+    unsafe {{
+        let this: *const {} = this as *const {};
+        let to_return = Box::new((*this).{});
+        Box::into_raw(to_return) as Ptr
+    }}
+}}
+"#, getter_name, t.name, t.name, get_code));
+
+                let set_code = if is_field {
+                    format!("{} = {}", prop.name, prop.name)
+                } else {
+                    format!("set_{}({})", prop.name, prop.name)
+                };
+                let setter_name = format!("{}_set_{}", t.name, prop.name);
+                let prop_type = self.get_type_name(&prop.prop_type)
+                    .unwrap_or("<ERROR TYPE GENERATOR>".to_string());
+                self.bindings_block.push_str(
+                    &format!(r#"
+pub extern "C" fn {}(this: Ptr, object: Ptr) {{
+    unsafe {{
+        let this: *mut {} = this as *mut {};
+        let {}: {} = ptr::read(object as *const {});
+        (*this).{};
+    }}
+}}
+"#, setter_name, t.name, t.name, field.name, prop_type, prop_type, set_code));
+
+            self.tgload_body.push_str(
+                &format!("{}.add_property({}, Property {{ getter: {}, setter: {} }});\n",
+                         get_type_name(t), prop.id, getter_name, setter)
+            );
+        }
+    }
+
     fn gen_variant(&mut self, variant: &Variant, t: &Type) {
         if self.pass_vis(&variant.vis) {
             let fn_name = format!("{}_{}", t.name, variant.name);
 
             // Translate properties into arguments
             let mut args = vec![];
-            for v_prop in &variant.props {
-                args.push(Argument::from(v_prop.clone()))
+            for v_field in &variant.fields {
+                args.push(Argument::from(v_field.clone()))
             }
 
             let (enum_variant, args_code) = if args.len() > 0 {
@@ -290,6 +336,9 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                         is_sealed,
                         constructors,
                         properties,
+                        fields,
+                        static_properties,
+                        static_fields,
                         methods,
                         parents
                     } => {
@@ -305,6 +354,15 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                         }
                         for prop in properties {
                             self.gen_property(prop, &t);
+                        }
+                        for static_prop in static_properties {
+                            self.gen_property(prop, &t); // TODO implement static properties
+                        }
+                        for field in fields {
+                            self.gen_property(prop, &t);
+                        }
+                        for static_field in static_fields {
+                            // TODO implement static field
                         }
                         for method in methods {
                             self.gen_method(method, &t);
@@ -328,7 +386,8 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                     }
                     TypeKind::Struct {
                         constructors,
-                        properties
+                        fields,
+                        static_fields
                     } => {
                         let type_name = get_type_name(&t);
                         self.tgload_body.push_str(
@@ -340,8 +399,11 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
                             self.gen_ctor(ctor, &t, count);
                             count += 1;
                         }
-                        for prop in properties {
+                        for field in fields {
                             self.gen_property(prop, &t);
+                        }
+                        for static_field in static_fields {
+                            // TODO implement static field
                         }
                     }
                     _ => {

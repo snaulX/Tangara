@@ -19,9 +19,6 @@ pub struct Config {
     /// For example: if we have there name `new`, `MyStruct::new(args)` will added to type as constructor.
     /// Default: `"new"`
     pub ctor_names: Vec<String>,
-    /// Generate properties from public fields
-    /// Default: `true`
-    pub generate_pub_fields: bool,
     /// Generate properties from get_, set_ pair methods
     /// Default: `true`
     pub generate_properties: bool
@@ -32,7 +29,6 @@ impl Default for Config {
         Self {
             dont_inherit_traits: vec!["Default".to_string(), "From".to_string()],
             ctor_names: vec!["new".to_string()],
-            generate_pub_fields: true,
             generate_properties: true
         }
     }
@@ -458,7 +454,6 @@ impl PackageGenerator {
                             variant_builder.add_attribute(RUST_STD_LIB.tuple_variant_attribute());
                         }
                         for field in &variant.fields {
-                            // TODO implement fields
                             let field_name = if let Some(field_ident) = &field.ident {
                                 field_ident.to_string()
                             }
@@ -467,20 +462,16 @@ impl PackageGenerator {
                             };
                             let (field_type, field_attrs) = get_typeref(&field.ty)
                                 .expect("Field cannot have type None");
-                            let mut prop_builder = variant_builder.add_property(
-                                field_type,
-                                &field_name
-                            );
+                            let mut field_builder = variant_builder.add_field(field_type, &field_name);
                             if field.ident.is_none() {
-                                prop_builder.add_attribute(RUST_STD_LIB.tuple_field_attribute(count));
+                                field_builder.add_attribute(RUST_STD_LIB.tuple_field_attribute(count));
                             }
                             for attr in field_attrs {
-                                prop_builder.add_attribute(attr);
+                                field_builder.add_attribute(attr);
                             }
-                            let prop_vis = get_visibility(&field.vis);
-                            prop_builder.getter_visibility(prop_vis);
-                            prop_builder.setter_visibility(prop_vis);
-                            prop_builder.build();
+                            field_builder.add_attribute(RUST_STD_LIB.struct_field_attribute());
+                            field_builder.set_visibility(get_visibility(&field.vis));
+                            field_builder.build();
                             count += 1;
                         }
                         variant_builder.build();
@@ -690,38 +681,31 @@ impl PackageGenerator {
                 builder.type_visibility = old_vis;
             }
             Item::Struct(struct_item) => {
-                let generate_pub_fields = self.config.generate_pub_fields;
                 let class_builder = self.get_or_create_struct(struct_item.ident.to_string());
                 class_builder.set_visibility(get_visibility(&struct_item.vis));
                 parse_generics(class_builder, &struct_item.generics);
 
-                if generate_pub_fields {
-                    let mut count = 0;
-                    for field in &struct_item.fields {
-                        // TODO replace it with fields
-                        if let Visibility::Public(_) = field.vis {
-                            let field_name = if let Some(field_ident) = &field.ident {
-                                field_ident.to_string()
-                            }
-                            else {
-                                format!("field{}", count)
-                            };
-                            let (field_type, field_attrs) = get_typeref(&field.ty)
-                                .expect("Field cannot have type None");
-                            let mut prop_builder = class_builder.add_property(
-                                field_type,
-                                &field_name
-                            );
-                            for attr in field_attrs {
-                                prop_builder.add_attribute(attr);
-                            }
-                            prop_builder.add_attribute(RUST_STD_LIB.struct_field_attribute());
-                            prop_builder.getter_visibility(TgVis::Public);
-                            prop_builder.setter_visibility(TgVis::Public);
-                            prop_builder.build();
-                        }
-                        count += 1;
+                let mut count = 0;
+                for field in &struct_item.fields {
+                    let field_name = if let Some(field_ident) = &field.ident {
+                        field_ident.to_string()
                     }
+                    else {
+                        format!("field{}", count)
+                    };
+                    let (field_type, field_attrs) = get_typeref(&field.ty)
+                        .expect("Field cannot have type None");
+                    let mut field_builder = class_builder.add_field(field_type, &field_name);
+                    if field.ident.is_none() {
+                        field_builder.add_attribute(RUST_STD_LIB.tuple_field_attribute(count));
+                    }
+                    for attr in field_attrs {
+                        field_builder.add_attribute(attr);
+                    }
+                    field_builder.add_attribute(RUST_STD_LIB.struct_field_attribute());
+                    field_builder.set_visibility(get_visibility(&field.vis));
+                    field_builder.build();
+                    count += 1;
                 }
             }
             Item::Trait(trait_item) => {
@@ -796,7 +780,7 @@ impl PackageGenerator {
     /// Set full path of mod as namespace. Mod path must be `my_mod::extra` format.
     /// If mod path was set earlier - it rewrites it.
     pub fn set_mod(mut self, mod_path: &str) -> Self {
-        self.package_builder.borrow_mut().set_namespace(&mod_path.replace("::", "."));
+        self.package_builder.borrow_mut().set_namespace(mod_path);
         self
     }
 
@@ -822,17 +806,24 @@ impl PackageGenerator {
                 is_sealed: _is_sealed,
                 constructors,
                 properties,
+                fields,
+                static_properties,
+                static_fields,
                 methods,
                 parents
             } = &result.kind {
                 let mut builder = self.package_builder.borrow_mut();
                 builder.add_type(
                     // Change type's kind on Struct if it's possible
-                    if methods.len() == 0 && parents.len() == 0 {
+                    if methods.len() == 0 &&
+                        parents.len() == 0 &&
+                        properties.len() == 0 &&
+                        static_properties.len() == 0 {
                         let mut result = result.clone();
                         result.kind = TypeKind::Struct {
                             constructors: constructors.to_vec(),
-                            properties: properties.to_vec()
+                            fields: fields.to_vec(),
+                            static_fields: static_fields.to_vec()
                         };
                         result
                     }

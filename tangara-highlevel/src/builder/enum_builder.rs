@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::builder::{AttributeCollector, GenericsCollector, PackageBuilder, PropertyBuilder, PropertyCollector, TypeBuilder};
-use crate::{Attribute, generate_member_id, generate_type_id, Generics, Method, Property, Type, TypeRef, Value, Variant, Visibility};
+use crate::builder::{AttributeCollector, GenericsCollector, PackageBuilder, FieldBuilder, FieldCollector, TypeBuilder};
+use crate::{Attribute, Field, generate_member_id, generate_type_id, Generics, Method, Property, Type, TypeRef, Value, Variant, Visibility};
 use crate::TypeKind::{Enum, EnumClass};
 
 pub struct EnumBuilder {
@@ -243,7 +243,7 @@ pub struct VariantBuilder<'a> {
     attrs: Vec<Attribute>,
     vis: Visibility,
     name: String,
-    properties: Vec<Property>
+    fields: Vec<Field>
 }
 
 impl<'a> VariantBuilder<'a> {
@@ -254,7 +254,7 @@ impl<'a> VariantBuilder<'a> {
             attrs: vec![],
             vis,
             name: name.to_string(),
-            properties: vec![]
+            fields: vec![]
         }
     }
 
@@ -263,8 +263,8 @@ impl<'a> VariantBuilder<'a> {
         self
     }
 
-    pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
-        PropertyBuilder::new(self, prop_type, name)
+    pub fn add_field(&mut self, field_type: TypeRef, name: &str) -> FieldBuilder<Self> {
+        FieldBuilder::new(self, false, field_type, name)
     }
 
     pub fn build(self) -> &'a mut EnumClassBuilder {
@@ -273,19 +273,23 @@ impl<'a> VariantBuilder<'a> {
             vis: self.vis,
             name: self.name.clone(),
             id: generate_member_id(&self.name),
-            props: self.properties,
+            fields: self.fields,
         });
         self.builder
     }
 }
 
-impl<'a> PropertyCollector for VariantBuilder<'a> {
+impl<'a> FieldCollector for VariantBuilder<'a> {
     fn get_default_visibility(&self) -> Visibility {
         self.builder.builder.borrow().member_visibility
     }
 
-    fn add_property(&mut self, property: Property) {
-        self.properties.push(property);
+    fn add_field(&mut self, field: Field) {
+        self.fields.push(field);
+    }
+
+    fn add_static_field(&mut self, _: Field) {
+        unreachable!("Enum class can't have static fields")
     }
 }
 

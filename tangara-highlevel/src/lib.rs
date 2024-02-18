@@ -42,6 +42,9 @@ pub enum TypeKind {
         is_sealed: bool,
         constructors: Vec<Constructor>,
         properties: Vec<Property>,
+        fields: Vec<Field>,
+        static_properties: Vec<Property>,
+        static_fields: Vec<Field>,
         methods: Vec<Method>,
         parents: Vec<TypeRef>
     },
@@ -62,7 +65,8 @@ pub enum TypeKind {
     /// Type's kind that contains only data
     Struct {
         constructors: Vec<Constructor>,
-        properties: Vec<Property>
+        fields: Vec<Field>,
+        static_fields: Vec<Field>
     },
     TypeAlias(Box<TypeRef>)
 }
@@ -324,6 +328,12 @@ impl From<Property> for Argument {
     }
 }
 
+impl From<Field> for Argument {
+    fn from(value: Field) -> Self {
+        Argument(value.attrs, value.field_type, value.name, ArgumentKind::Default)
+    }
+}
+
 // Structs block
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
@@ -380,6 +390,7 @@ pub struct Field {
     pub vis: Visibility,
     pub field_type: TypeRef,
     pub name: String,
+    pub default_value: Option<Value>,
     pub id: u64
 }
 
@@ -408,7 +419,7 @@ pub struct Method {
     pub kind: MethodKind
 }
 
-/// Rust-like variant for 'enum class', can contain properties
+/// Rust-like variant for 'enum class', can contain fields
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Variant {
@@ -416,5 +427,5 @@ pub struct Variant {
     pub vis: Visibility,
     pub name: String,
     pub id: u64,
-    pub props: Vec<Property>
+    pub fields: Vec<Field>
 }

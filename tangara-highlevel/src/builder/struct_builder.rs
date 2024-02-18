@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::builder::{GenericsCollector, PackageBuilder, TypeBuilder};
-use crate::{Attribute, Constructor, generate_type_id, Generics, Property, Type, TypeRef, Visibility};
+use crate::{Attribute, Constructor, Field, generate_type_id, Generics, Property, Type, TypeRef, Visibility};
 use crate::builder::constructor_builder::*;
-use crate::builder::property_builder::*;
+use crate::builder::field_builder::*;
 use crate::TypeKind::Struct;
 
 pub struct StructBuilder {
@@ -13,7 +13,8 @@ pub struct StructBuilder {
     namespace: String,
     vis: Visibility,
     constructors: Vec<Constructor>,
-    properties: Vec<Property>,
+    fields: Vec<Field>,
+    static_fields: Vec<Field>,
     generics: Vec<String>,
     generics_where: Vec<(String, TypeRef)>
 }
@@ -28,8 +29,9 @@ impl StructBuilder {
             name: name.to_string(),
             namespace,
             vis,
-            constructors: Vec::new(),
-            properties: Vec::new(),
+            constructors: vec![],
+            fields: vec![],
+            static_fields: vec![],
             generics: vec![],
             generics_where: vec![]
         }
@@ -39,8 +41,12 @@ impl StructBuilder {
         ConstructorBuilder::new(self)
     }
 
-    pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
-        PropertyBuilder::new(self, prop_type, name)
+    pub fn add_field(&mut self, field_type: TypeRef, name: &str) -> FieldBuilder<Self> {
+        FieldBuilder::new(self, false, field_type, name)
+    }
+
+    pub fn add_static_field(&mut self, field_type: TypeRef, name: &str) -> FieldBuilder<Self> {
+        FieldBuilder::new(self, true, field_type, name)
     }
 }
 
@@ -72,7 +78,8 @@ impl TypeBuilder for StructBuilder {
             generics: Generics(self.generics.to_vec(), self.generics_where.to_vec()),
             kind: Struct {
                 constructors: self.constructors.to_vec(),
-                properties: self.properties.to_vec()
+                fields: self.fields.to_vec(),
+                static_fields: self.static_fields.to_vec()
             }
         }
     }
@@ -114,12 +121,16 @@ impl ConstructorCollector for StructBuilder {
     }
 }
 
-impl PropertyCollector for StructBuilder {
+impl FieldCollector for StructBuilder {
     fn get_default_visibility(&self) -> Visibility {
         self.builder.borrow().member_visibility
     }
 
-    fn add_property(&mut self, property: Property) {
-        self.properties.push(property)
+    fn add_field(&mut self, field: Field) {
+        self.fields.push(field)
+    }
+
+    fn add_static_field(&mut self, field: Field) {
+        self.static_fields.push(field)
     }
 }

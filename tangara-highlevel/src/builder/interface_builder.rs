@@ -44,7 +44,7 @@ impl InterfaceBuilder {
     }
 
     pub fn add_property(&mut self, prop_type: TypeRef, name: &str) -> PropertyBuilder<Self> {
-        PropertyBuilder::new(self, prop_type, name)
+        PropertyBuilder::new(self, false, prop_type, name)
     }
 
     pub fn add_method(&mut self, name: &str) -> MethodBuilder<Self> {
@@ -103,7 +103,7 @@ impl GenericsCollector for InterfaceBuilder {
     }
 
     /// Add statement for generics `where statement.0: statement.1`.
-    /// Function *panics* if first type doesn't exists in generics of this interface.
+    /// Function *panics* if first type doesn't exist in generics of this interface.
     fn generic_where(&mut self, statement: (String, TypeRef)) -> &mut Self {
         if !self.generics.contains(&statement.0) {
             panic!(
@@ -126,6 +126,10 @@ impl PropertyCollector for InterfaceBuilder {
             panic!("Visibility of interface member cannot be private")
         }
         self.properties.push(property)
+    }
+
+    fn add_static_property(&mut self, _: Property) {
+        unreachable!("Interface can't have static properties")
     }
 }
 

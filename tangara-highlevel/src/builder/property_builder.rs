@@ -4,10 +4,12 @@ use crate::{Attribute, generate_member_id, Property, TypeRef, Visibility};
 pub trait PropertyCollector {
     fn get_default_visibility(&self) -> Visibility;
     fn add_property(&mut self, property: Property);
+    fn add_static_property(&mut self, property: Property);
 }
 
 pub struct PropertyBuilder<'a, T: PropertyCollector> {
     builder: &'a mut T,
+    is_static: bool,
     attrs: Vec<Attribute>,
     getter_visibility: Visibility,
     setter_visibility: Option<Visibility>,
@@ -16,11 +18,12 @@ pub struct PropertyBuilder<'a, T: PropertyCollector> {
 }
 
 impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
-    pub(crate) fn new(builder: &'a mut T, prop_type: TypeRef, name: &str) -> Self {
+    pub(crate) fn new(builder: &'a mut T, is_static: bool, prop_type: TypeRef, name: &str) -> Self {
         let getter_visibility = builder.get_default_visibility();
         Self {
             attrs: vec![],
             builder,
+            is_static,
             getter_visibility,
             setter_visibility: None,
             prop_type,
@@ -53,7 +56,12 @@ impl<'a, T: PropertyCollector> PropertyBuilder<'a, T> {
 
     /// Pass property to parent builder and returns it
     pub fn build(&'a mut self) -> &'a mut T {
-        self.builder.add_property(self.get_property());
+        if self.is_static {
+            self.builder.add_static_property(self.get_property());
+        }
+        else {
+            self.builder.add_property(self.get_property());
+        }
         self.builder
     }
 }

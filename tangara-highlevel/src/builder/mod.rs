@@ -10,6 +10,7 @@ mod alias_builder;
 mod constructor_builder;
 mod property_builder;
 mod method_builder;
+mod field_builder;
 
 pub use crate::builder::alias_builder::*;
 pub use crate::builder::class_builder::*;
@@ -19,6 +20,7 @@ pub use crate::builder::struct_builder::*;
 pub use crate::builder::method_builder::*;
 pub use crate::builder::property_builder::*;
 pub use crate::builder::constructor_builder::*;
+pub use crate::builder::field_builder::*;
 
 pub trait TypeBuilder {
     fn add_attribute(&mut self, attr: Attribute) -> &mut Self;
@@ -62,7 +64,7 @@ pub struct PackageBuilder {
     pub type_visibility: Visibility,
     /// Default visibility for constructors
     pub constructor_visibility: Visibility,
-    /// Default visibility for properties/variants
+    /// Default visibility for properties/variants/fields
     pub member_visibility: Visibility,
     /// Default visibility for methods
     pub method_visibility: Visibility,
