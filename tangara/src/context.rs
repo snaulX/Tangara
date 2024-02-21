@@ -8,12 +8,17 @@ pub struct Property {
     pub getter: extern "C" fn(Ptr) -> Ptr,
     pub setter: Option<extern "C" fn(Ptr, Ptr)>
 }
+pub struct StaticProperty {
+    pub getter: extern "C" fn() -> Ptr,
+    pub setter: Option<extern "C" fn(Ptr)>
+}
 
 pub struct FuncTable {
     dtor: Option<FnDtor>,
     ctors: Vec<Fn>,
     methods: HashMap<u64, Fn>,
-    properties: HashMap<u64, Property>
+    properties: HashMap<u64, Property>,
+    statics: HashMap<u64, StaticProperty>
 }
 
 impl FuncTable {
@@ -22,7 +27,8 @@ impl FuncTable {
             dtor: None,
             ctors: Vec::new(),
             methods: HashMap::new(),
-            properties: HashMap::new()
+            properties: HashMap::new(),
+            statics: HashMap::new()
         }
     }
 
@@ -57,6 +63,14 @@ impl FuncTable {
 
     pub fn get_property(&self, id: u64) -> &Property {
         self.properties.get(&id).expect(format!("Property with id {id} is not found").as_str())
+    }
+
+    pub fn add_static(&mut self, id: u64, static_property: StaticProperty) {
+        self.statics.insert(id, static_property);
+    }
+
+    pub fn get_static(&self, id: u64) -> &StaticProperty {
+        self.statics.get(&id).expect(format!("Static property with id {id} is not found").as_str())
     }
 }
 
