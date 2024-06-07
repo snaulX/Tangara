@@ -407,6 +407,12 @@ impl SourceGenerator {
         }
     }
 
+    fn gen_field(&mut self, field: &Field, type_name: &str) {
+        if self.pass_vis(&field.vis) {
+            // TODO
+        }
+    }
+
     /// Returns constructor's function name
     fn gen_ctor(&mut self, ctor: &Constructor, index: u32, type_name: &str) -> String {
         if self.pass_vis(&ctor.vis) {
@@ -601,9 +607,17 @@ impl SourceGenerator {
                 self.gen_vis(&t.vis);
 
                 match &t.kind {
-                    TypeKind::Class { is_sealed, constructors, properties, methods, parents} => {
+                    TypeKind::Class {
+                        is_sealed,
+                        constructors,
+                        properties,
+                        fields,
+                        static_properties,
+                        static_fields,
+                        methods,
+                        parents
+                    } => {
                         let class_load_name = self.add_load_type(&t);
-                        // TODO implement fields
                         // TODO implement parents
                         // TODO do something with 'is_sealed'
                         self.bindings_block.push_str(&format!(r#"struct {} {{
@@ -630,6 +644,15 @@ impl{} {} {{
                         }
                         for prop in properties {
                             self.gen_property(&prop, Some(&t.name));
+                        }
+                        for field in fields {
+                            self.gen_field(&field, &t.name);
+                        }
+                        for prop in static_properties {
+                            self.gen_static_property(&prop, Some(&t.name));
+                        }
+                        for field in static_fields {
+                            self.gen_static_field(&field, &t.name);
                         }
                         for method in methods {
                             self.gen_method(&method, &t.name);
@@ -680,8 +703,7 @@ impl{} {} {{
                         }
                         self.bindings_block.push('}');
                     }
-                    TypeKind::Struct { constructors, properties } => {
-                        // TODO implement fields
+                    TypeKind::Struct { constructors, fields, static_fields } => {
                         let struct_load_name = self.add_load_type(&t);
                         self.bindings_block.push_str(&format!(r#"struct {} {{
     ptr: Ptr
@@ -689,10 +711,10 @@ impl{} {} {{
 
 impl{} {} {{
 "#,
-                                                              get_type_name(&t, &self.naming, true),
-                                                              get_generics(&t.generics, &t.attrs, &self.naming, true),
-                                                              get_type_name(&t, &self.naming, false)
-                        )); // end of push_str(format!(/*..*/));
+                            get_type_name(&t, &self.naming, true),
+                            get_generics(&t.generics, &t.attrs, &self.naming, true),
+                            get_type_name(&t, &self.naming, false)
+                        )); // end of push_str(&format!(/*..*/));
                         // What's happened in format's arguments:
                         // first - type name with generics and where Type<T: Kek>
                         // second - generics with where <T: Kek>
@@ -706,8 +728,11 @@ impl{} {} {{
                             }
                             ctor_counter += 1;
                         }
-                        for prop in properties {
-                            self.gen_property(&prop, Some(&t.name));
+                        for field in fields {
+                            self.gen_field(&field, &t.name);
+                        }
+                        for field in static_fields {
+                            self.gen_static_field(&field, &t.name);
                         }
                         self.bindings_block.push('}');
                         self.gen_drop(&t, &struct_load_name);
@@ -719,10 +744,12 @@ impl{} {} {{
                     }
                     TypeKind::TypeAlias(alias) => {
                         self.bindings_block.push_str(
-                            &format!("type {} = {};",
-                                     get_type_name(&t, &self.naming, true),
-                                     get_typeref(&alias, &self.naming)
-                            ));
+                            &format!(
+                                "type {} = {};",
+                                get_type_name(&t, &self.naming, true),
+                                get_typeref(&alias, &self.naming)
+                            )
+                        );
                     }
                 }
                 self.bindings_block.push('\n');

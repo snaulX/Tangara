@@ -185,14 +185,14 @@ pub extern "C" fn {}(args_size: usize, args: *mut u8) -> Ptr {{
             let getter_name = format!("{}_get_{}", t.name, prop.name);
             self.bindings_block.push_str(
                 &format!(r#"
-pub extern "C" fn {}(this: Ptr) -> Ptr {{
+pub extern "C" fn {0}(this: Ptr) -> Ptr {{
     unsafe {{
-        let this: *const {} = this as *const {};
-        let to_return = Box::new((*this).get_{}());
+        let this: *const {1} = this as *const {1};
+        let to_return = Box::new((*this).get_{2}());
         Box::into_raw(to_return) as Ptr
     }}
 }}
-"#, getter_name, t.name, t.name, get_code));
+"#, getter_name, t.name, prop.name));
 
             let setter = if let Some(setter_vis) = prop.setter_visibility {
                 if self.pass_vis(&setter_vis) {
@@ -201,14 +201,14 @@ pub extern "C" fn {}(this: Ptr) -> Ptr {{
                         .unwrap_or("<ERROR TYPE GENERATOR>".to_string());
                     self.bindings_block.push_str(
                         &format!(r#"
-pub extern "C" fn {}(this: Ptr, object: Ptr) {{
+pub extern "C" fn {0}(this: Ptr, object: Ptr) {{
     unsafe {{
-        let this: *mut {} = this as *mut {};
-        let {}: {} = ptr::read(object as *const {});
-        (*this).set_{}({});
+        let this: *mut {1} = this as *mut {1};
+        let {2}: {3} = ptr::read(object as *const {3});
+        (*this).set_{2}({2});
     }}
 }}
-"#, setter_name, t.name, t.name, prop.name, prop_type, prop_type, set_code));
+"#, setter_name, t.name, prop.name, prop_type));
                     format!("Some({})", setter_name)
                 }
                 else {
@@ -260,47 +260,33 @@ pub extern "C" fn {0}(this: Ptr, object: Ptr) {{
         }
     }
 
-    // TODO
     fn gen_static_property(&mut self, prop: &Property, t: &Type) {
         if self.pass_vis(&prop.getter_visibility) {
-            let is_field = RUST_STD_LIB.is_struct_field(&prop.attrs);
-            let get_code = if is_field {
-                prop.name.clone()
-            } else {
-                format!("get_{}()", prop.name)
-            };
-            let getter_name = format!("{}_get_{}", t.name, prop.name);
+            let getter_name = format!("{}_get_static_{}", t.name, prop.name);
             self.bindings_block.push_str(
                 &format!(r#"
-pub extern "C" fn {}(this: Ptr) -> Ptr {{
+pub extern "C" fn {0}() -> Ptr {{
     unsafe {{
-        let this: *const {} = this as *const {};
-        let to_return = Box::new((*this).{});
+        let to_return = Box::new({1}::get_{2}());
         Box::into_raw(to_return) as Ptr
     }}
 }}
-"#, getter_name, t.name, t.name, get_code));
+"#, getter_name, t.name, prop.name));
 
             let setter = if let Some(setter_vis) = prop.setter_visibility {
                 if self.pass_vis(&setter_vis) {
-                    let set_code = if is_field {
-                        format!("{} = {}", prop.name, prop.name)
-                    } else {
-                        format!("set_{}({})", prop.name, prop.name)
-                    };
-                    let setter_name = format!("{}_set_{}", t.name, prop.name);
+                    let setter_name = format!("{}_set_static_{}", t.name, prop.name);
                     let prop_type = self.get_type_name(&prop.prop_type)
                         .unwrap_or("<ERROR TYPE GENERATOR>".to_string());
                     self.bindings_block.push_str(
                         &format!(r#"
-pub extern "C" fn {}(this: Ptr, object: Ptr) {{
+pub extern "C" fn {0}(object: Ptr) {{
     unsafe {{
-        let this: *mut {} = this as *mut {};
-        let {}: {} = ptr::read(object as *const {});
-        (*this).{};
+        let {2}: {3} = ptr::read(object as *const {3});
+        {1}::set_{2}({2});
     }}
 }}
-"#, setter_name, t.name, t.name, prop.name, prop_type, prop_type, set_code));
+"#, setter_name, t.name, prop.name, prop_type));
                     format!("Some({})", setter_name)
                 }
                 else {
@@ -311,7 +297,7 @@ pub extern "C" fn {}(this: Ptr, object: Ptr) {{
             };
 
             self.tgload_body.push_str(
-                &format!("{}.add_property({}, Property {{ getter: {}, setter: {} }});\n",
+                &format!("{}.add_static({}, StaticProperty {{ getter: {}, setter: {} }});\n",
                          get_type_name(t), prop.id, getter_name, setter)
             );
         }
@@ -320,34 +306,32 @@ pub extern "C" fn {}(this: Ptr, object: Ptr) {{
     // TODO
     fn gen_static_field(&mut self, field: &Field, t: &Type) {
         if self.pass_vis(&field.vis) {
-            let getter_name = format!("{}_get_{}", t.name, field.name);
+            let getter_name = format!("{}_get_static_{}", t.name, field.name);
             self.bindings_block.push_str(
                 &format!(r#"
-pub extern "C" fn {0}(this: Ptr) -> Ptr {{
+pub extern "C" fn {}() -> Ptr {{
     unsafe {{
-        let this: *const {1} = this as *const {1};
-        let to_return = Box::new((*this).{2});
+        let to_return = Box::new({}::{});
         Box::into_raw(to_return) as Ptr
     }}
 }}
 "#, getter_name, t.name, field.name));
 
-                let setter_name = format!("{}_set_{}", t.name, field.name);
+                let setter_name = format!("{}_set_static_{}", t.name, field.name);
                 let field_type = self.get_type_name(&field.field_type)
                     .unwrap_or("<ERROR TYPE GENERATOR>".to_string());
                 self.bindings_block.push_str(
                     &format!(r#"
-pub extern "C" fn {0}(this: Ptr, object: Ptr) {{
+pub extern "C" fn {0}(object: Ptr) {{
     unsafe {{
-        let this: *mut {1} = this as *mut {1};
         let {2}: {3} = ptr::read(object as *const {3});
-        (*this).{2} = {2};
+        {1}::{2} = {2};
     }}
 }}
 "#, setter_name, t.name, field.name, field_type));
 
             self.tgload_body.push_str(
-                &format!("{}.add_property({}, Property {{ getter: {}, setter: {} }});\n",
+                &format!("{}.add_static({}, StaticProperty {{ getter: {}, setter: {} }});\n",
                          get_type_name(t), field.id, getter_name, setter_name)
             );
         }

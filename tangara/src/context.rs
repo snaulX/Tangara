@@ -62,7 +62,7 @@ impl FuncTable {
     }
 
     pub fn get_property(&self, id: u64) -> &Property {
-        self.properties.get(&id).expect(format!("Property with id {id} is not found").as_str())
+        self.properties.get(&id).expect(&format!("Property with id {id} is not found"))
     }
 
     pub fn add_static(&mut self, id: u64, static_property: StaticProperty) {
@@ -70,7 +70,7 @@ impl FuncTable {
     }
 
     pub fn get_static(&self, id: u64) -> &StaticProperty {
-        self.statics.get(&id).expect(format!("Static property with id {id} is not found").as_str())
+        self.statics.get(&id).expect(&format!("Static property with id {id} is not found"))
     }
 }
 
